@@ -14,6 +14,10 @@ impl CanvasState {
         self.current_stroke = None;
     }
 
+    pub fn undo(&mut self) {
+        self.strokes.pop();
+    }
+
     pub fn ui(&mut self, ui: &mut Ui) -> Response {
         let available_size = ui.available_size();
         let (response, painter) = ui.allocate_painter(available_size, Sense::drag());
