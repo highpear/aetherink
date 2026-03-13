@@ -20,6 +20,14 @@ impl eframe::App for AetherInkApp {
 
                 ui.separator();
 
+                ui.label("Color:");
+                ui.color_edit_button_srgba(&mut self.canvas.current_color);
+
+                ui.label("Width:");
+                ui.add(egui::Slider::new(&mut self.canvas.current_width, 1.0..=20.0));
+
+                ui.separator();
+
                 if ui.button("Undo").clicked() {
                     self.canvas.undo();
                 }
@@ -31,7 +39,7 @@ impl eframe::App for AetherInkApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("Drag mouse to draw black lines.");
+            ui.label("Drag mouse to draw.");
             self.canvas.ui(ui);
         });
 

@@ -2,10 +2,23 @@ use egui::{Color32, Response, Sense, Stroke, Ui};
 
 use crate::stroke::DrawStroke;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CanvasState {
     pub strokes: Vec<DrawStroke>,
     pub current_stroke: Option<DrawStroke>,
+    pub current_color: Color32,
+    pub current_width: f32,
+}
+
+impl Default for CanvasState {
+    fn default() -> Self {
+        Self {
+            strokes: Vec::new(),
+            current_stroke: None,
+            current_color: Color32::BLACK,
+            current_width: 2.0,
+        }
+    }
 }
 
 impl CanvasState {
@@ -27,7 +40,7 @@ impl CanvasState {
 
         if response.drag_started() {
             if let Some(pos) = response.interact_pointer_pos() {
-                let mut stroke = DrawStroke::new(Color32::BLACK, 2.0);
+                let mut stroke = DrawStroke::new(self.current_color, self.current_width);
                 stroke.points.push(pos);
                 self.current_stroke = Some(stroke);
             }
