@@ -2,12 +2,35 @@ use egui::{Color32, Response, Sense, Stroke, Ui};
 
 use crate::stroke::DrawStroke;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CanvasBackground {
+    White,
+    Transparent,
+}
+
+impl CanvasBackground {
+    pub fn color(self) -> Color32 {
+        match self {
+            Self::White => Color32::WHITE,
+            Self::Transparent => Color32::TRANSPARENT,
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::White => "White",
+            Self::Transparent => "Transparent",
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct CanvasState {
     pub strokes: Vec<DrawStroke>,
     pub current_stroke: Option<DrawStroke>,
     pub current_color: Color32,
     pub current_width: f32,
+    pub background: CanvasBackground,
 }
 
 impl Default for CanvasState {
@@ -17,6 +40,7 @@ impl Default for CanvasState {
             current_stroke: None,
             current_color: Color32::BLACK,
             current_width: 2.0,
+            background: CanvasBackground::White,
         }
     }
 }
@@ -36,7 +60,7 @@ impl CanvasState {
         let (response, painter) = ui.allocate_painter(available_size, Sense::drag());
 
         let rect = response.rect;
-        painter.rect_filled(rect, 0.0, Color32::WHITE);
+        painter.rect_filled(rect, 0.0, self.background.color());
 
         if response.drag_started() {
             if let Some(pos) = response.interact_pointer_pos() {
