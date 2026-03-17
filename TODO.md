@@ -15,9 +15,9 @@ Basic drawing functionality.
 
 Next improvements:
 
-- [ ] Undo last stroke
-- [ ] Adjustable pen width
-- [ ] Adjustable pen color
+- [x] Undo last stroke
+- [x] Adjustable pen width
+- [x] Adjustable pen color
 - [ ] Eraser tool
 - [ ] Stroke smoothing
 
@@ -27,8 +27,8 @@ Next improvements:
 
 Improve drawing usability.
 
-- [ ] Transparent canvas background
-- [ ] Toggle canvas background (white / transparent)
+- [x] Transparent canvas background
+- [x] Toggle canvas background (white / transparent)
 - [ ] Toggle drawing mode
 - [ ] Keyboard shortcut for clear
 - [ ] Keyboard shortcut for undo
