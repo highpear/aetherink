@@ -57,7 +57,7 @@ impl eframe::App for AetherInkApp {
         });
 
         egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.fill(egui::Color32::TRANSPARENT))
+            .frame(egui::Frame::NONE.fill(self.canvas.background.color()))
             .show(ctx, |ui| {
             ui.label("Drag mouse to draw.");
             self.canvas.ui(ui);
