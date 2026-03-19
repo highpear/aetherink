@@ -10,7 +10,12 @@ pub struct AetherInkApp {
 impl eframe::App for AetherInkApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Keyboard shortcuts
-        if ctx.input_mut(|i| i.consume_shortcut(&egui::KeyboardShortcut::new(egui::Modifiers::COMMAND, egui::Key::Z))) {
+        if ctx.input_mut(|i| {
+            i.consume_shortcut(&egui::KeyboardShortcut::new(
+                egui::Modifiers::COMMAND,
+                egui::Key::Z,
+            ))
+        }) {
             self.canvas.undo();
         }
 
@@ -24,7 +29,10 @@ impl eframe::App for AetherInkApp {
                 ui.color_edit_button_srgba(&mut self.canvas.current_color);
 
                 ui.label("Width:");
-                ui.add(egui::Slider::new(&mut self.canvas.current_width, 1.0..=20.0));
+                ui.add(egui::Slider::new(
+                    &mut self.canvas.current_width,
+                    1.0..=20.0,
+                ));
 
                 ui.separator();
 
@@ -44,6 +52,18 @@ impl eframe::App for AetherInkApp {
                         );
                     });
 
+                if self.canvas.background == CanvasBackground::Transparent {
+                    ui.label("Opacity:");
+                    ui.add(
+                        egui::Slider::new(
+                            &mut self.canvas.transparent_background_opacity,
+                            0.0..=1.0,
+                        )
+                        .show_value(true)
+                        .fixed_decimals(2),
+                    );
+                }
+
                 ui.separator();
 
                 if ui.button("Undo").clicked() {
@@ -57,10 +77,10 @@ impl eframe::App for AetherInkApp {
         });
 
         egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.fill(self.canvas.background.color()))
+            .frame(egui::Frame::NONE.fill(self.canvas.background_color()))
             .show(ctx, |ui| {
-            ui.label("Drag mouse to draw.");
-            self.canvas.ui(ui);
+                ui.label("Drag mouse to draw.");
+                self.canvas.ui(ui);
             });
 
         ctx.request_repaint();

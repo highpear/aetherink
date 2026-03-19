@@ -9,13 +9,6 @@ pub enum CanvasBackground {
 }
 
 impl CanvasBackground {
-    pub fn color(self) -> Color32 {
-        match self {
-            Self::White => Color32::WHITE,
-            Self::Transparent => Color32::TRANSPARENT,
-        }
-    }
-
     pub fn label(self) -> &'static str {
         match self {
             Self::White => "White",
@@ -31,6 +24,7 @@ pub struct CanvasState {
     pub current_color: Color32,
     pub current_width: f32,
     pub background: CanvasBackground,
+    pub transparent_background_opacity: f32,
 }
 
 impl Default for CanvasState {
@@ -41,11 +35,22 @@ impl Default for CanvasState {
             current_color: Color32::BLACK,
             current_width: 2.0,
             background: CanvasBackground::White,
+            transparent_background_opacity: 0.0,
         }
     }
 }
 
 impl CanvasState {
+    pub fn background_color(&self) -> Color32 {
+        match self.background {
+            CanvasBackground::White => Color32::WHITE,
+            CanvasBackground::Transparent => {
+                let alpha = (self.transparent_background_opacity.clamp(0.0, 1.0) * 255.0) as u8;
+                Color32::from_white_alpha(alpha)
+            }
+        }
+    }
+
     pub fn clear(&mut self) {
         self.strokes.clear();
         self.current_stroke = None;
@@ -60,7 +65,7 @@ impl CanvasState {
         let (response, painter) = ui.allocate_painter(available_size, Sense::drag());
 
         let rect = response.rect;
-        painter.rect_filled(rect, 0.0, self.background.color());
+        painter.rect_filled(rect, 0.0, self.background_color());
 
         if response.drag_started() {
             if let Some(pos) = response.interact_pointer_pos() {
