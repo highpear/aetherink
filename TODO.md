@@ -4,7 +4,7 @@ AetherInk is a lightweight overlay drawing tool for Windows and macOS.
 
 ---
 
-# Phase 1 — Core Drawing (MVP)
+## Phase 1 — Core Drawing (MVP)
 
 Basic drawing functionality.
 
@@ -23,7 +23,7 @@ Next improvements:
 
 ---
 
-# Phase 2 — Canvas Features
+## Phase 2 — Canvas Features
 
 Improve drawing usability.
 
@@ -37,7 +37,7 @@ Improve drawing usability.
 
 ---
 
-# Phase 3 — Overlay Mode
+## Phase 3 — Overlay Mode
 
 Core feature of AetherInk.
 
@@ -55,17 +55,17 @@ Release key → click-through
 
 ---
 
-# Phase 4 — Platform Integration
+## Phase 4 — Platform Integration
 
 OS-specific behavior.
 
-## Windows
+### Windows
 
 - [ ] Window transparency
 - [ ] Click-through window style
 - [ ] Always-on-top control
 
-## macOS
+### macOS
 
 - [ ] Transparent window
 - [ ] Floating window level
@@ -73,7 +73,7 @@ OS-specific behavior.
 
 ---
 
-# Phase 5 — Productivity Features
+## Phase 5 — Productivity Features
 
 Useful tools for meetings and brainstorming.
 
@@ -84,7 +84,7 @@ Useful tools for meetings and brainstorming.
 
 ---
 
-# Phase 6 — UI Improvements
+## Phase 6 — UI Improvements
 
 Improve user experience.
 
@@ -95,7 +95,7 @@ Improve user experience.
 
 ---
 
-# Phase 7 — Performance
+## Phase 7 — Performance
 
 - [ ] Optimize stroke rendering
 - [ ] Limit point density
@@ -103,7 +103,7 @@ Improve user experience.
 
 ---
 
-# Phase 8 — Distribution
+## Phase 8 — Distribution
 
 Prepare for release.
 
@@ -115,7 +115,7 @@ Prepare for release.
 
 ---
 
-# Future Ideas
+## Future Ideas
 
 - [ ] Screen recording annotation
 - [ ] Laser pointer mode
