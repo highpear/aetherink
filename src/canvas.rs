@@ -2,6 +2,8 @@ use egui::{Color32, Response, Sense, Stroke, Ui};
 
 use crate::stroke::DrawStroke;
 
+const DEFAULT_WHITE_BACKGROUND: Color32 = Color32::from_rgb(248, 246, 240);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CanvasBackground {
     White,
@@ -43,7 +45,7 @@ impl Default for CanvasState {
 impl CanvasState {
     pub fn background_color(&self) -> Color32 {
         match self.background {
-            CanvasBackground::White => Color32::WHITE,
+            CanvasBackground::White => DEFAULT_WHITE_BACKGROUND,
             CanvasBackground::Transparent => {
                 let alpha = (self.transparent_background_opacity.clamp(0.0, 1.0) * 255.0) as u8;
                 Color32::from_white_alpha(alpha)
