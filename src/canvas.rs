@@ -3,6 +3,8 @@ use egui::{Color32, Response, Sense, Stroke, Ui};
 use crate::stroke::DrawStroke;
 
 const DEFAULT_WHITE_BACKGROUND: Color32 = Color32::from_rgb(248, 246, 240);
+const TRANSPARENT_CANVAS_BORDER: Color32 = Color32::from_gray(180);
+const CANVAS_BORDER_HOVER_THRESHOLD: f32 = 24.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CanvasBackground {
@@ -68,6 +70,19 @@ impl CanvasState {
 
         let rect = response.rect;
         painter.rect_filled(rect, 0.0, self.background_color());
+        let should_show_transparent_border = self.background == CanvasBackground::Transparent
+            && response
+                .hover_pos()
+                .is_some_and(|pointer_pos| is_near_canvas_edge(rect, pointer_pos));
+
+        if should_show_transparent_border {
+            painter.rect_stroke(
+                rect,
+                0.0,
+                Stroke::new(1.0, TRANSPARENT_CANVAS_BORDER),
+                egui::StrokeKind::Inside,
+            );
+        }
 
         if response.drag_started() {
             if let Some(pos) = response.interact_pointer_pos() {
@@ -119,4 +134,14 @@ fn draw_stroke(painter: &egui::Painter, stroke: &DrawStroke) {
             Stroke::new(stroke.width, stroke.color),
         );
     }
+}
+
+fn is_near_canvas_edge(rect: egui::Rect, pointer_pos: egui::Pos2) -> bool {
+    let distance_to_left = (pointer_pos.x - rect.left()).abs();
+    let distance_to_right = (rect.right() - pointer_pos.x).abs();
+    let distance_to_bottom = (rect.bottom() - pointer_pos.y).abs();
+
+    distance_to_left <= CANVAS_BORDER_HOVER_THRESHOLD
+        || distance_to_right <= CANVAS_BORDER_HOVER_THRESHOLD
+        || distance_to_bottom <= CANVAS_BORDER_HOVER_THRESHOLD
 }
