@@ -2,6 +2,14 @@ use eframe::egui;
 
 use crate::canvas::{CanvasBackground, CanvasState};
 
+const BASIC_PEN_COLORS: [(&str, egui::Color32); 5] = [
+    ("Black", egui::Color32::BLACK),
+    ("White", egui::Color32::WHITE),
+    ("Red", egui::Color32::from_rgb(220, 38, 38)),
+    ("Yellow", egui::Color32::from_rgb(234, 179, 8)),
+    ("Blue", egui::Color32::from_rgb(37, 99, 235)),
+];
+
 #[derive(Debug, Default)]
 pub struct AetherInkApp {
     canvas: CanvasState,
@@ -27,6 +35,7 @@ impl eframe::App for AetherInkApp {
 
                 ui.label("Color:");
                 ui.color_edit_button_srgba(&mut self.canvas.current_color);
+                show_basic_pen_colors(ui, &mut self.canvas.current_color);
 
                 ui.label("Width:");
                 ui.add(egui::Slider::new(
@@ -89,4 +98,31 @@ impl eframe::App for AetherInkApp {
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
         egui::Color32::TRANSPARENT.to_normalized_gamma_f32()
     }
+}
+
+fn show_basic_pen_colors(ui: &mut egui::Ui, current_color: &mut egui::Color32) {
+    ui.horizontal(|ui| {
+        for (label, color) in BASIC_PEN_COLORS {
+            let is_selected = *current_color == color;
+            let stroke_color = if is_selected {
+                egui::Color32::from_rgb(30, 30, 30)
+            } else {
+                egui::Color32::from_gray(120)
+            };
+
+            let response = ui
+                .add(
+                    egui::Button::new("")
+                        .min_size(egui::vec2(18.0, 18.0))
+                        .fill(color)
+                        .stroke(egui::Stroke::new(1.0, stroke_color))
+                        .corner_radius(9.0),
+                )
+                .on_hover_text(label);
+
+            if response.clicked() {
+                *current_color = color;
+            }
+        }
+    });
 }
