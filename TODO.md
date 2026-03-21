@@ -89,9 +89,15 @@ Useful tools for meetings and brainstorming.
 Improve user experience.
 
 - [ ] Minimal toolbar
+- [ ] Settings window
+- [ ] Default background setting
+- [ ] Transparent background opacity setting
+- [ ] Default pen color setting
+- [ ] Default pen width setting
 - [ ] Pen selection
 - [ ] Color palette
 - [ ] Pen size slider
+- [ ] Transparent canvas border visibility setting (always show / show near edges only)
 
 ---
 
