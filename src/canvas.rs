@@ -21,6 +21,21 @@ impl CanvasBackground {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TransparentCanvasBorderVisibility {
+    Always,
+    NearEdges,
+}
+
+impl TransparentCanvasBorderVisibility {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Always => "Always",
+            Self::NearEdges => "Near edges",
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct CanvasState {
     pub strokes: Vec<DrawStroke>,
@@ -29,6 +44,7 @@ pub struct CanvasState {
     pub current_width: f32,
     pub background: CanvasBackground,
     pub transparent_background_opacity: f32,
+    pub transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
 }
 
 impl Default for CanvasState {
@@ -40,6 +56,7 @@ impl Default for CanvasState {
             current_width: 2.0,
             background: CanvasBackground::White,
             transparent_background_opacity: 0.0,
+            transparent_canvas_border_visibility: TransparentCanvasBorderVisibility::NearEdges,
         }
     }
 }
@@ -70,10 +87,7 @@ impl CanvasState {
 
         let rect = response.rect;
         painter.rect_filled(rect, 0.0, self.background_color());
-        let should_show_transparent_border = self.background == CanvasBackground::Transparent
-            && response
-                .hover_pos()
-                .is_some_and(|pointer_pos| is_near_canvas_edge(rect, pointer_pos));
+        let should_show_transparent_border = self.should_show_transparent_border(&response, rect);
 
         if should_show_transparent_border {
             painter.rect_stroke(
@@ -124,6 +138,19 @@ impl CanvasState {
         }
 
         response
+    }
+
+    fn should_show_transparent_border(&self, response: &Response, rect: egui::Rect) -> bool {
+        if self.background != CanvasBackground::Transparent {
+            return false;
+        }
+
+        match self.transparent_canvas_border_visibility {
+            TransparentCanvasBorderVisibility::Always => true,
+            TransparentCanvasBorderVisibility::NearEdges => response
+                .hover_pos()
+                .is_some_and(|pointer_pos| is_near_canvas_edge(rect, pointer_pos)),
+        }
     }
 }
 

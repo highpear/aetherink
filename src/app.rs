@@ -1,6 +1,8 @@
 use eframe::egui;
 
-use crate::canvas::{CanvasBackground, CanvasState};
+use crate::canvas::{
+    CanvasBackground, CanvasState, TransparentCanvasBorderVisibility,
+};
 
 const BASIC_PEN_COLORS: [(&str, egui::Color32); 5] = [
     ("Black", egui::Color32::BLACK),
@@ -13,6 +15,7 @@ const BASIC_PEN_COLORS: [(&str, egui::Color32); 5] = [
 #[derive(Debug, Default)]
 pub struct AetherInkApp {
     canvas: CanvasState,
+    is_settings_window_open: bool,
 }
 
 impl eframe::App for AetherInkApp {
@@ -45,36 +48,6 @@ impl eframe::App for AetherInkApp {
 
                 ui.separator();
 
-                ui.label("Background:");
-                egui::ComboBox::from_id_salt("canvas_background")
-                    .selected_text(self.canvas.background.label())
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(
-                            &mut self.canvas.background,
-                            CanvasBackground::White,
-                            CanvasBackground::White.label(),
-                        );
-                        ui.selectable_value(
-                            &mut self.canvas.background,
-                            CanvasBackground::Transparent,
-                            CanvasBackground::Transparent.label(),
-                        );
-                    });
-
-                if self.canvas.background == CanvasBackground::Transparent {
-                    ui.label("Opacity:");
-                    ui.add(
-                        egui::Slider::new(
-                            &mut self.canvas.transparent_background_opacity,
-                            0.0..=1.0,
-                        )
-                        .show_value(true)
-                        .fixed_decimals(2),
-                    );
-                }
-
-                ui.separator();
-
                 if ui.button("Undo").clicked() {
                     self.canvas.undo();
                 }
@@ -82,8 +55,16 @@ impl eframe::App for AetherInkApp {
                 if ui.button("Clear").clicked() {
                     self.canvas.clear();
                 }
+
+                ui.separator();
+
+                if ui.button("Settings").clicked() {
+                    self.is_settings_window_open = true;
+                }
             });
         });
+
+        self.show_settings_window(ctx);
 
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE.fill(self.canvas.background_color()))
@@ -97,6 +78,80 @@ impl eframe::App for AetherInkApp {
 
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
         egui::Color32::TRANSPARENT.to_normalized_gamma_f32()
+    }
+}
+
+impl AetherInkApp {
+    fn show_settings_window(&mut self, ctx: &egui::Context) {
+        if !self.is_settings_window_open {
+            return;
+        }
+
+        egui::Window::new("Settings")
+            .open(&mut self.is_settings_window_open)
+            .collapsible(false)
+            .resizable(false)
+            .default_width(260.0)
+            .show(ctx, |ui| {
+                ui.label("Canvas");
+
+                ui.horizontal(|ui| {
+                    ui.label("Background:");
+                    egui::ComboBox::from_id_salt("settings_canvas_background")
+                        .selected_text(self.canvas.background.label())
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.canvas.background,
+                                CanvasBackground::White,
+                                CanvasBackground::White.label(),
+                            );
+                            ui.selectable_value(
+                                &mut self.canvas.background,
+                                CanvasBackground::Transparent,
+                                CanvasBackground::Transparent.label(),
+                            );
+                        });
+                });
+
+                ui.add_enabled_ui(
+                    self.canvas.background == CanvasBackground::Transparent,
+                    |ui| {
+                        ui.horizontal(|ui| {
+                            ui.label("Opacity:");
+                            ui.add(
+                                egui::Slider::new(
+                                    &mut self.canvas.transparent_background_opacity,
+                                    0.0..=1.0,
+                                )
+                                .show_value(true)
+                                .fixed_decimals(2),
+                            );
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label("Border:");
+                            egui::ComboBox::from_id_salt("settings_canvas_border_visibility")
+                                .selected_text(
+                                    self.canvas
+                                        .transparent_canvas_border_visibility
+                                        .label(),
+                                )
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(
+                                        &mut self.canvas.transparent_canvas_border_visibility,
+                                        TransparentCanvasBorderVisibility::Always,
+                                        TransparentCanvasBorderVisibility::Always.label(),
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.canvas.transparent_canvas_border_visibility,
+                                        TransparentCanvasBorderVisibility::NearEdges,
+                                        TransparentCanvasBorderVisibility::NearEdges.label(),
+                                    );
+                                });
+                        });
+                    },
+                );
+            });
     }
 }
 
