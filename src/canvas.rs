@@ -1,4 +1,5 @@
 use egui::{Color32, Response, Sense, Stroke, Ui};
+use serde::{Deserialize, Serialize};
 
 use crate::stroke::DrawStroke;
 
@@ -6,7 +7,7 @@ const DEFAULT_WHITE_BACKGROUND: Color32 = Color32::from_rgb(248, 246, 240);
 const TRANSPARENT_CANVAS_BORDER: Color32 = Color32::from_gray(180);
 const CANVAS_BORDER_HOVER_THRESHOLD: f32 = 24.0;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CanvasBackground {
     White,
     Transparent,
@@ -21,7 +22,7 @@ impl CanvasBackground {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TransparentCanvasBorderVisibility {
     Always,
     NearEdges,

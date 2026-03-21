@@ -1,7 +1,7 @@
 mod app;
 mod canvas;
-mod stroke;
 mod platform;
+mod stroke;
 
 use app::AetherInkApp;
 
@@ -17,6 +17,6 @@ fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "AetherInk",
         options,
-        Box::new(|_cc| Ok(Box::new(AetherInkApp::default()))),
+        Box::new(|cc| Ok(Box::new(AetherInkApp::new(cc)))),
     )
 }

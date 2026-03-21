@@ -1,4 +1,5 @@
 use eframe::egui;
+use serde::{Deserialize, Serialize};
 
 use crate::canvas::{
     CanvasBackground, CanvasState, TransparentCanvasBorderVisibility,
@@ -11,6 +12,27 @@ const BASIC_PEN_COLORS: [(&str, egui::Color32); 5] = [
     ("Yellow", egui::Color32::from_rgb(234, 179, 8)),
     ("Blue", egui::Color32::from_rgb(37, 99, 235)),
 ];
+const APP_SETTINGS_KEY: &str = "app_settings";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+struct AppSettings {
+    background: CanvasBackground,
+    transparent_background_opacity: f32,
+    transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        let canvas = CanvasState::default();
+
+        Self {
+            background: canvas.background,
+            transparent_background_opacity: canvas.transparent_background_opacity,
+            transparent_canvas_border_visibility: canvas.transparent_canvas_border_visibility,
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct AetherInkApp {
@@ -79,9 +101,25 @@ impl eframe::App for AetherInkApp {
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
         egui::Color32::TRANSPARENT.to_normalized_gamma_f32()
     }
+
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, APP_SETTINGS_KEY, &self.collect_settings());
+    }
 }
 
 impl AetherInkApp {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let mut app = Self::default();
+
+        if let Some(storage) = cc.storage {
+            if let Some(settings) = eframe::get_value(storage, APP_SETTINGS_KEY) {
+                app.apply_settings(settings);
+            }
+        }
+
+        app
+    }
+
     fn show_settings_window(&mut self, ctx: &egui::Context) {
         if !self.is_settings_window_open {
             return;
@@ -152,6 +190,21 @@ impl AetherInkApp {
                     },
                 );
             });
+    }
+
+    fn apply_settings(&mut self, settings: AppSettings) {
+        self.canvas.background = settings.background;
+        self.canvas.transparent_background_opacity = settings.transparent_background_opacity;
+        self.canvas.transparent_canvas_border_visibility =
+            settings.transparent_canvas_border_visibility;
+    }
+
+    fn collect_settings(&self) -> AppSettings {
+        AppSettings {
+            background: self.canvas.background,
+            transparent_background_opacity: self.canvas.transparent_background_opacity,
+            transparent_canvas_border_visibility: self.canvas.transparent_canvas_border_visibility,
+        }
     }
 }
 
