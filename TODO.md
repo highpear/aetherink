@@ -41,7 +41,7 @@ Improve drawing usability.
 
 Core feature of AetherInk.
 
-- [ ] Always-on-top window
+- [x] Always-on-top window
 - [ ] Borderless window mode
 - [ ] Transparent window background
 - [ ] Click-through mode
@@ -63,7 +63,7 @@ OS-specific behavior.
 
 - [ ] Window transparency
 - [ ] Click-through window style
-- [ ] Always-on-top control
+- [x] Always-on-top control
 
 ### macOS
 
