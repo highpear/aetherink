@@ -20,6 +20,7 @@ struct AppSettings {
     background: CanvasBackground,
     transparent_background_opacity: f32,
     transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
+    always_on_top: bool,
 }
 
 impl Default for AppSettings {
@@ -30,6 +31,7 @@ impl Default for AppSettings {
             background: canvas.background,
             transparent_background_opacity: canvas.transparent_background_opacity,
             transparent_canvas_border_visibility: canvas.transparent_canvas_border_visibility,
+            always_on_top: false,
         }
     }
 }
@@ -38,6 +40,7 @@ impl Default for AppSettings {
 pub struct AetherInkApp {
     canvas: CanvasState,
     is_settings_window_open: bool,
+    always_on_top: bool,
 }
 
 impl eframe::App for AetherInkApp {
@@ -80,6 +83,15 @@ impl eframe::App for AetherInkApp {
 
                 ui.separator();
 
+                if ui
+                    .checkbox(&mut self.always_on_top, "Always on top")
+                    .changed()
+                {
+                    self.apply_always_on_top(ctx);
+                }
+
+                ui.separator();
+
                 if ui.button("Settings").clicked() {
                     self.is_settings_window_open = true;
                 }
@@ -117,6 +129,8 @@ impl AetherInkApp {
             }
         }
 
+        app.apply_always_on_top(&cc.egui_ctx);
+
         app
     }
 
@@ -125,8 +139,11 @@ impl AetherInkApp {
             return;
         }
 
+        let mut is_settings_window_open = self.is_settings_window_open;
+        let mut always_on_top_changed = false;
+
         egui::Window::new("Settings")
-            .open(&mut self.is_settings_window_open)
+            .open(&mut is_settings_window_open)
             .collapsible(false)
             .resizable(false)
             .default_width(260.0)
@@ -189,7 +206,22 @@ impl AetherInkApp {
                         });
                     },
                 );
+
+                ui.separator();
+
+                if ui
+                    .checkbox(&mut self.always_on_top, "Always on top")
+                    .changed()
+                {
+                    always_on_top_changed = true;
+                }
             });
+
+        self.is_settings_window_open = is_settings_window_open;
+
+        if always_on_top_changed {
+            self.apply_always_on_top(ctx);
+        }
     }
 
     fn apply_settings(&mut self, settings: AppSettings) {
@@ -197,6 +229,7 @@ impl AetherInkApp {
         self.canvas.transparent_background_opacity = settings.transparent_background_opacity;
         self.canvas.transparent_canvas_border_visibility =
             settings.transparent_canvas_border_visibility;
+        self.always_on_top = settings.always_on_top;
     }
 
     fn collect_settings(&self) -> AppSettings {
@@ -204,7 +237,18 @@ impl AetherInkApp {
             background: self.canvas.background,
             transparent_background_opacity: self.canvas.transparent_background_opacity,
             transparent_canvas_border_visibility: self.canvas.transparent_canvas_border_visibility,
+            always_on_top: self.always_on_top,
         }
+    }
+
+    fn apply_always_on_top(&self, ctx: &egui::Context) {
+        let window_level = if self.always_on_top {
+            egui::viewport::WindowLevel::AlwaysOnTop
+        } else {
+            egui::viewport::WindowLevel::Normal
+        };
+
+        ctx.send_viewport_cmd(egui::ViewportCommand::WindowLevel(window_level));
     }
 }
 
