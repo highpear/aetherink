@@ -21,6 +21,7 @@ struct AppSettings {
     transparent_background_opacity: f32,
     transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
     always_on_top: bool,
+    borderless_window: bool,
 }
 
 impl Default for AppSettings {
@@ -32,6 +33,7 @@ impl Default for AppSettings {
             transparent_background_opacity: canvas.transparent_background_opacity,
             transparent_canvas_border_visibility: canvas.transparent_canvas_border_visibility,
             always_on_top: false,
+            borderless_window: false,
         }
     }
 }
@@ -41,6 +43,7 @@ pub struct AetherInkApp {
     canvas: CanvasState,
     is_settings_window_open: bool,
     always_on_top: bool,
+    borderless_window: bool,
 }
 
 impl eframe::App for AetherInkApp {
@@ -60,6 +63,18 @@ impl eframe::App for AetherInkApp {
                 ui.heading("AetherInk");
 
                 ui.separator();
+
+                if self.borderless_window {
+                    let drag_response = ui.add(
+                        egui::Label::new("Drag window").sense(egui::Sense::click_and_drag()),
+                    );
+
+                    if drag_response.drag_started() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
+                    }
+
+                    ui.separator();
+                }
 
                 ui.label("Color:");
                 ui.color_edit_button_srgba(&mut self.canvas.current_color);
@@ -130,6 +145,7 @@ impl AetherInkApp {
         }
 
         app.apply_always_on_top(&cc.egui_ctx);
+        app.apply_borderless_window(&cc.egui_ctx);
 
         app
     }
@@ -141,6 +157,7 @@ impl AetherInkApp {
 
         let mut is_settings_window_open = self.is_settings_window_open;
         let mut always_on_top_changed = false;
+        let mut borderless_window_changed = false;
 
         egui::Window::new("Settings")
             .open(&mut is_settings_window_open)
@@ -215,12 +232,23 @@ impl AetherInkApp {
                 {
                     always_on_top_changed = true;
                 }
+
+                if ui
+                    .checkbox(&mut self.borderless_window, "Borderless window")
+                    .changed()
+                {
+                    borderless_window_changed = true;
+                }
             });
 
         self.is_settings_window_open = is_settings_window_open;
 
         if always_on_top_changed {
             self.apply_always_on_top(ctx);
+        }
+
+        if borderless_window_changed {
+            self.apply_borderless_window(ctx);
         }
     }
 
@@ -230,6 +258,7 @@ impl AetherInkApp {
         self.canvas.transparent_canvas_border_visibility =
             settings.transparent_canvas_border_visibility;
         self.always_on_top = settings.always_on_top;
+        self.borderless_window = settings.borderless_window;
     }
 
     fn collect_settings(&self) -> AppSettings {
@@ -238,6 +267,7 @@ impl AetherInkApp {
             transparent_background_opacity: self.canvas.transparent_background_opacity,
             transparent_canvas_border_visibility: self.canvas.transparent_canvas_border_visibility,
             always_on_top: self.always_on_top,
+            borderless_window: self.borderless_window,
         }
     }
 
@@ -249,6 +279,12 @@ impl AetherInkApp {
         };
 
         ctx.send_viewport_cmd(egui::ViewportCommand::WindowLevel(window_level));
+    }
+
+    fn apply_borderless_window(&self, ctx: &egui::Context) {
+        ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(
+            !self.borderless_window,
+        ));
     }
 }
 

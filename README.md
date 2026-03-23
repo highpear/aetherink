@@ -17,6 +17,7 @@ A lightweight desktop overlay drawing app for Windows and macOS.
 - Undo last stroke
 - Clear canvas button
 - Always-on-top window toggle
+- Borderless window toggle
 - White / transparent canvas background toggle
 - Adjustable transparent background opacity
 
