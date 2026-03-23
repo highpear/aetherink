@@ -7,3 +7,6 @@ edition = "2024"
 eframe = { version = "0.33", features = ["persistence"] }
 egui = "0.33"
 serde = { version = "1", features = ["derive"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_UI_Input_KeyboardAndMouse"] }
