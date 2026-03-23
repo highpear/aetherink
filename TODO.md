@@ -42,7 +42,7 @@ Improve drawing usability.
 Core feature of AetherInk.
 
 - [x] Always-on-top window
-- [ ] Borderless window mode
+- [x] Borderless window mode
 - [ ] Transparent window background
 - [ ] Click-through mode
 - [ ] Toggle overlay mode shortcut
