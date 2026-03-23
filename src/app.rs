@@ -24,6 +24,7 @@ struct AppSettings {
     always_on_top: bool,
     borderless_window: bool,
     click_through_mode: bool,
+    transparent_window_background: bool,
 }
 
 impl Default for AppSettings {
@@ -37,6 +38,7 @@ impl Default for AppSettings {
             always_on_top: false,
             borderless_window: false,
             click_through_mode: false,
+            transparent_window_background: false,
         }
     }
 }
@@ -48,6 +50,7 @@ pub struct AetherInkApp {
     always_on_top: bool,
     borderless_window: bool,
     click_through_mode: bool,
+    transparent_window_background: bool,
     click_through_controller: ClickThroughController,
 }
 
@@ -67,7 +70,9 @@ impl eframe::App for AetherInkApp {
             self.canvas.undo();
         }
 
-        egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
+        egui::TopBottomPanel::top("top_bar")
+            .frame(egui::Frame::NONE.fill(self.top_bar_fill_color()))
+            .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.heading("AetherInk");
 
@@ -133,7 +138,7 @@ impl eframe::App for AetherInkApp {
         self.show_settings_window(ctx);
 
         egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.fill(self.canvas.background_color()))
+            .frame(egui::Frame::NONE.fill(self.central_panel_fill_color()))
             .show(ctx, |ui| {
                 ui.label("Drag mouse to draw.");
                 self.canvas.ui(ui);
@@ -178,6 +183,7 @@ impl AetherInkApp {
         let mut always_on_top_changed = false;
         let mut borderless_window_changed = false;
         let mut click_through_mode_changed = false;
+        let mut transparent_window_background_changed = false;
         let click_through_supported = self.click_through_controller.is_supported();
         let is_drawing = self.canvas.current_stroke.is_some();
 
@@ -262,6 +268,20 @@ impl AetherInkApp {
                     borderless_window_changed = true;
                 }
 
+                if ui
+                    .checkbox(
+                        &mut self.transparent_window_background,
+                        "Transparent window background",
+                    )
+                    .changed()
+                {
+                    transparent_window_background_changed = true;
+                }
+
+                if self.transparent_window_background {
+                    ui.small("The window frame and panel background blend into the screen.");
+                }
+
                 ui.separator();
                 ui.label("Overlay");
 
@@ -300,6 +320,10 @@ impl AetherInkApp {
             self.apply_borderless_window(ctx);
         }
 
+        if transparent_window_background_changed {
+            ctx.request_repaint();
+        }
+
         if click_through_mode_changed {
             self.set_click_through_mode(ctx, self.click_through_mode);
 
@@ -317,6 +341,7 @@ impl AetherInkApp {
         self.always_on_top = settings.always_on_top;
         self.borderless_window = settings.borderless_window;
         self.click_through_mode = settings.click_through_mode;
+        self.transparent_window_background = settings.transparent_window_background;
     }
 
     fn collect_settings(&self) -> AppSettings {
@@ -327,6 +352,7 @@ impl AetherInkApp {
             always_on_top: self.always_on_top,
             borderless_window: self.borderless_window,
             click_through_mode: self.click_through_mode,
+            transparent_window_background: self.transparent_window_background,
         }
     }
 
@@ -358,6 +384,22 @@ impl AetherInkApp {
 
         if !self.click_through_mode {
             ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        }
+    }
+
+    fn top_bar_fill_color(&self) -> egui::Color32 {
+        if self.transparent_window_background {
+            egui::Color32::from_rgba_unmultiplied(248, 246, 240, 168)
+        } else {
+            egui::Color32::from_rgba_unmultiplied(248, 246, 240, 245)
+        }
+    }
+
+    fn central_panel_fill_color(&self) -> egui::Color32 {
+        if self.transparent_window_background {
+            egui::Color32::TRANSPARENT
+        } else {
+            self.canvas.background_color()
         }
     }
 }
