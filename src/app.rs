@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::canvas::{
     CanvasBackground, CanvasState, TransparentCanvasBorderVisibility,
 };
+use crate::platform::ClickThroughController;
 
 const BASIC_PEN_COLORS: [(&str, egui::Color32); 5] = [
     ("Black", egui::Color32::BLACK),
@@ -22,6 +23,7 @@ struct AppSettings {
     transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
     always_on_top: bool,
     borderless_window: bool,
+    click_through_mode: bool,
 }
 
 impl Default for AppSettings {
@@ -34,6 +36,7 @@ impl Default for AppSettings {
             transparent_canvas_border_visibility: canvas.transparent_canvas_border_visibility,
             always_on_top: false,
             borderless_window: false,
+            click_through_mode: false,
         }
     }
 }
@@ -44,10 +47,16 @@ pub struct AetherInkApp {
     is_settings_window_open: bool,
     always_on_top: bool,
     borderless_window: bool,
+    click_through_mode: bool,
+    click_through_controller: ClickThroughController,
 }
 
 impl eframe::App for AetherInkApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if self.click_through_mode && self.click_through_controller.poll_restore_shortcut() {
+            self.set_click_through_mode(ctx, false);
+        }
+
         // Keyboard shortcuts
         if ctx.input_mut(|i| {
             i.consume_shortcut(&egui::KeyboardShortcut::new(
@@ -105,6 +114,14 @@ impl eframe::App for AetherInkApp {
                     self.apply_always_on_top(ctx);
                 }
 
+                if self.click_through_mode {
+                    ui.separator();
+                    ui.label(format!(
+                        "Click-through active. Press {} to restore.",
+                        self.click_through_controller.restore_shortcut_label()
+                    ));
+                }
+
                 ui.separator();
 
                 if ui.button("Settings").clicked() {
@@ -146,6 +163,8 @@ impl AetherInkApp {
 
         app.apply_always_on_top(&cc.egui_ctx);
         app.apply_borderless_window(&cc.egui_ctx);
+        app.click_through_mode = false;
+        app.apply_click_through_mode(&cc.egui_ctx);
 
         app
     }
@@ -158,6 +177,9 @@ impl AetherInkApp {
         let mut is_settings_window_open = self.is_settings_window_open;
         let mut always_on_top_changed = false;
         let mut borderless_window_changed = false;
+        let mut click_through_mode_changed = false;
+        let click_through_supported = self.click_through_controller.is_supported();
+        let is_drawing = self.canvas.current_stroke.is_some();
 
         egui::Window::new("Settings")
             .open(&mut is_settings_window_open)
@@ -239,6 +261,33 @@ impl AetherInkApp {
                 {
                     borderless_window_changed = true;
                 }
+
+                ui.separator();
+                ui.label("Overlay");
+
+                ui.add_enabled_ui(click_through_supported && !is_drawing, |ui| {
+                    if ui
+                        .checkbox(&mut self.click_through_mode, "Click-through mode")
+                        .changed()
+                    {
+                        click_through_mode_changed = true;
+                    }
+                });
+
+                if click_through_supported {
+                    ui.label(format!(
+                        "Restore shortcut: {}",
+                        self.click_through_controller.restore_shortcut_label()
+                    ));
+
+                    if is_drawing {
+                        ui.small("Finish the current stroke before enabling click-through.");
+                    } else if self.click_through_mode {
+                        ui.small("Mouse input is passing through to the window behind AetherInk.");
+                    }
+                } else {
+                    ui.small("Click-through mode is currently available on Windows only.");
+                }
             });
 
         self.is_settings_window_open = is_settings_window_open;
@@ -250,6 +299,14 @@ impl AetherInkApp {
         if borderless_window_changed {
             self.apply_borderless_window(ctx);
         }
+
+        if click_through_mode_changed {
+            self.set_click_through_mode(ctx, self.click_through_mode);
+
+            if self.click_through_mode {
+                self.is_settings_window_open = false;
+            }
+        }
     }
 
     fn apply_settings(&mut self, settings: AppSettings) {
@@ -259,6 +316,7 @@ impl AetherInkApp {
             settings.transparent_canvas_border_visibility;
         self.always_on_top = settings.always_on_top;
         self.borderless_window = settings.borderless_window;
+        self.click_through_mode = settings.click_through_mode;
     }
 
     fn collect_settings(&self) -> AppSettings {
@@ -268,6 +326,7 @@ impl AetherInkApp {
             transparent_canvas_border_visibility: self.canvas.transparent_canvas_border_visibility,
             always_on_top: self.always_on_top,
             borderless_window: self.borderless_window,
+            click_through_mode: self.click_through_mode,
         }
     }
 
@@ -285,6 +344,21 @@ impl AetherInkApp {
         ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(
             !self.borderless_window,
         ));
+    }
+
+    fn set_click_through_mode(&mut self, ctx: &egui::Context, enabled: bool) {
+        self.click_through_mode = enabled && self.click_through_controller.is_supported();
+        self.apply_click_through_mode(ctx);
+    }
+
+    fn apply_click_through_mode(&self, ctx: &egui::Context) {
+        ctx.send_viewport_cmd(egui::ViewportCommand::MousePassthrough(
+            self.click_through_mode,
+        ));
+
+        if !self.click_through_mode {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        }
     }
 }
 
