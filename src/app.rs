@@ -74,11 +74,10 @@ impl eframe::App for AetherInkApp {
             .frame(egui::Frame::NONE.fill(self.top_bar_fill_color()))
             .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("AetherInk");
-
-                ui.separator();
-
                 if self.borderless_window {
+                    ui.heading("AetherInk");
+                    ui.separator();
+
                     let drag_response = ui.add(
                         egui::Label::new("Drag window").sense(egui::Sense::click_and_drag()),
                     );
