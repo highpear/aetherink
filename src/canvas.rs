@@ -63,6 +63,10 @@ impl Default for CanvasState {
 }
 
 impl CanvasState {
+    pub fn has_strokes(&self) -> bool {
+        !self.strokes.is_empty()
+    }
+
     pub fn background_color(&self) -> Color32 {
         match self.background {
             CanvasBackground::White => DEFAULT_WHITE_BACKGROUND,

@@ -102,11 +102,21 @@ impl eframe::App for AetherInkApp {
 
                 ui.separator();
 
-                if ui.button("Undo").clicked() {
+                let has_strokes = self.canvas.has_strokes();
+
+                if ui
+                    .add_enabled(has_strokes, undo_button())
+                    .on_hover_text("Remove the last stroke (Ctrl+Z)")
+                    .clicked()
+                {
                     self.canvas.undo();
                 }
 
-                if ui.button("Clear").clicked() {
+                if ui
+                    .add_enabled(has_strokes, clear_button())
+                    .on_hover_text("Remove all strokes from the canvas")
+                    .clicked()
+                {
                     self.canvas.clear();
                 }
 
@@ -429,4 +439,28 @@ fn show_basic_pen_colors(ui: &mut egui::Ui, current_color: &mut egui::Color32) {
             }
         }
     });
+}
+
+fn undo_button() -> egui::Button<'static> {
+    egui::Button::new(
+        egui::RichText::new("Undo")
+            .strong()
+            .color(egui::Color32::from_rgb(34, 44, 66)),
+    )
+    .fill(egui::Color32::from_rgb(227, 236, 248))
+    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(127, 146, 179)))
+    .corner_radius(6.0)
+    .min_size(egui::vec2(62.0, 28.0))
+}
+
+fn clear_button() -> egui::Button<'static> {
+    egui::Button::new(
+        egui::RichText::new("Clear")
+            .strong()
+            .color(egui::Color32::from_rgb(122, 32, 32)),
+    )
+    .fill(egui::Color32::from_rgb(252, 231, 231))
+    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(220, 38, 38)))
+    .corner_radius(6.0)
+    .min_size(egui::vec2(68.0, 28.0))
 }
