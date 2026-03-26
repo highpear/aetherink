@@ -86,9 +86,14 @@ impl CanvasState {
         self.strokes.pop();
     }
 
-    pub fn ui(&mut self, ui: &mut Ui) -> Response {
+    pub fn ui(&mut self, ui: &mut Ui, drawing_enabled: bool) -> Response {
         let available_size = ui.available_size();
-        let (response, painter) = ui.allocate_painter(available_size, Sense::drag());
+        let sense = if drawing_enabled {
+            Sense::drag()
+        } else {
+            Sense::hover()
+        };
+        let (response, painter) = ui.allocate_painter(available_size, sense);
 
         let rect = response.rect;
         painter.rect_filled(rect, 0.0, self.background_color());
@@ -103,7 +108,7 @@ impl CanvasState {
             );
         }
 
-        if response.drag_started() {
+        if drawing_enabled && response.drag_started() {
             if let Some(pos) = response.interact_pointer_pos() {
                 let mut stroke = DrawStroke::new(self.current_color, self.current_width);
                 stroke.points.push(pos);
@@ -111,7 +116,7 @@ impl CanvasState {
             }
         }
 
-        if response.dragged() {
+        if drawing_enabled && response.dragged() {
             if let Some(pos) = response.interact_pointer_pos() {
                 if let Some(stroke) = &mut self.current_stroke {
                     let should_push = match stroke.points.last() {
@@ -126,7 +131,7 @@ impl CanvasState {
             }
         }
 
-        if response.drag_stopped() {
+        if drawing_enabled && response.drag_stopped() {
             if let Some(stroke) = self.current_stroke.take() {
                 if stroke.is_meaningful() {
                     self.strokes.push(stroke);
@@ -143,6 +148,10 @@ impl CanvasState {
         }
 
         response
+    }
+
+    pub fn stop_drawing(&mut self) {
+        self.current_stroke = None;
     }
 
     fn should_show_transparent_border(&self, response: &Response, rect: egui::Rect) -> bool {
