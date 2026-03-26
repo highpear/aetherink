@@ -14,6 +14,7 @@ A lightweight desktop overlay drawing app for Windows and macOS.
 - Black line drawing with mouse drag
 - Adjustable pen color
 - Adjustable pen width
+- Toggle drawing mode
 - Undo last stroke
 - Clear canvas button
 - Always-on-top window toggle

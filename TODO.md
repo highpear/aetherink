@@ -30,7 +30,7 @@ Improve drawing usability.
 - [x] Transparent canvas background
 - [x] Toggle canvas background (white / transparent)
 - [x] Adjustable transparent background opacity
-- [ ] Toggle drawing mode
+- [x] Toggle drawing mode
 - [ ] Keyboard shortcut for clear
 - [ ] Keyboard shortcut for undo
 - [ ] Cursor indicator for pen

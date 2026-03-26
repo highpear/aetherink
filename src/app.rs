@@ -21,6 +21,7 @@ struct AppSettings {
     background: CanvasBackground,
     transparent_background_opacity: f32,
     transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
+    drawing_enabled: bool,
     always_on_top: bool,
     borderless_window: bool,
     click_through_mode: bool,
@@ -35,6 +36,7 @@ impl Default for AppSettings {
             background: canvas.background,
             transparent_background_opacity: canvas.transparent_background_opacity,
             transparent_canvas_border_visibility: canvas.transparent_canvas_border_visibility,
+            drawing_enabled: true,
             always_on_top: false,
             borderless_window: false,
             click_through_mode: false,
@@ -47,6 +49,7 @@ impl Default for AppSettings {
 pub struct AetherInkApp {
     canvas: CanvasState,
     is_settings_window_open: bool,
+    drawing_enabled: bool,
     always_on_top: bool,
     borderless_window: bool,
     click_through_mode: bool,
@@ -101,6 +104,16 @@ impl eframe::App for AetherInkApp {
 
                 ui.separator();
 
+                if ui
+                    .selectable_label(self.drawing_enabled, drawing_mode_label(self.drawing_enabled))
+                    .on_hover_text("Toggle whether mouse dragging draws on the canvas")
+                    .clicked()
+                {
+                    self.set_drawing_enabled(!self.drawing_enabled);
+                }
+
+                ui.separator();
+
                 let has_strokes = self.canvas.has_strokes();
 
                 if ui
@@ -149,8 +162,13 @@ impl eframe::App for AetherInkApp {
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE.fill(self.central_panel_fill_color()))
             .show(ctx, |ui| {
-                ui.label("Drag mouse to draw.");
-                self.canvas.ui(ui);
+                if self.drawing_enabled {
+                    ui.label("Drag mouse to draw.");
+                } else {
+                    ui.label("Drawing paused. Enable Draw to edit the canvas.");
+                }
+
+                self.canvas.ui(ui, self.drawing_enabled);
             });
 
         ctx.request_repaint();
@@ -189,6 +207,7 @@ impl AetherInkApp {
         }
 
         let mut is_settings_window_open = self.is_settings_window_open;
+        let mut drawing_enabled_changed = false;
         let mut always_on_top_changed = false;
         let mut borderless_window_changed = false;
         let mut click_through_mode_changed = false;
@@ -264,6 +283,13 @@ impl AetherInkApp {
                 ui.separator();
 
                 if ui
+                    .checkbox(&mut self.drawing_enabled, "Enable drawing")
+                    .changed()
+                {
+                    drawing_enabled_changed = true;
+                }
+
+                if ui
                     .checkbox(&mut self.always_on_top, "Always on top")
                     .changed()
                 {
@@ -321,6 +347,10 @@ impl AetherInkApp {
 
         self.is_settings_window_open = is_settings_window_open;
 
+        if drawing_enabled_changed {
+            self.set_drawing_enabled(self.drawing_enabled);
+        }
+
         if always_on_top_changed {
             self.apply_always_on_top(ctx);
         }
@@ -347,6 +377,7 @@ impl AetherInkApp {
         self.canvas.transparent_background_opacity = settings.transparent_background_opacity;
         self.canvas.transparent_canvas_border_visibility =
             settings.transparent_canvas_border_visibility;
+        self.drawing_enabled = settings.drawing_enabled;
         self.always_on_top = settings.always_on_top;
         self.borderless_window = settings.borderless_window;
         self.click_through_mode = settings.click_through_mode;
@@ -358,6 +389,7 @@ impl AetherInkApp {
             background: self.canvas.background,
             transparent_background_opacity: self.canvas.transparent_background_opacity,
             transparent_canvas_border_visibility: self.canvas.transparent_canvas_border_visibility,
+            drawing_enabled: self.drawing_enabled,
             always_on_top: self.always_on_top,
             borderless_window: self.borderless_window,
             click_through_mode: self.click_through_mode,
@@ -379,6 +411,14 @@ impl AetherInkApp {
         ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(
             !self.borderless_window,
         ));
+    }
+
+    fn set_drawing_enabled(&mut self, enabled: bool) {
+        self.drawing_enabled = enabled;
+
+        if !enabled {
+            self.canvas.stop_drawing();
+        }
     }
 
     fn set_click_through_mode(&mut self, ctx: &egui::Context, enabled: bool) {
@@ -410,6 +450,14 @@ impl AetherInkApp {
         } else {
             self.canvas.background_color()
         }
+    }
+}
+
+fn drawing_mode_label(drawing_enabled: bool) -> &'static str {
+    if drawing_enabled {
+        "Draw: On"
+    } else {
+        "Draw: Off"
     }
 }
 
