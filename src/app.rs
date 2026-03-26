@@ -64,13 +64,14 @@ impl eframe::App for AetherInkApp {
         }
 
         // Keyboard shortcuts
-        if ctx.input_mut(|i| {
-            i.consume_shortcut(&egui::KeyboardShortcut::new(
-                egui::Modifiers::COMMAND,
-                egui::Key::Z,
-            ))
-        }) {
+        if keyboard_shortcut_pressed(ctx, egui::Key::Z, false) {
             self.canvas.undo();
+        }
+
+        if keyboard_shortcut_pressed(ctx, egui::Key::C, true)
+            || keyboard_shortcut_pressed(ctx, egui::Key::Delete, false)
+        {
+            self.canvas.clear();
         }
 
         egui::TopBottomPanel::top("top_bar")
@@ -126,7 +127,9 @@ impl eframe::App for AetherInkApp {
 
                 if ui
                     .add_enabled(has_strokes, clear_button())
-                    .on_hover_text("Remove all strokes from the canvas")
+                    .on_hover_text(
+                        "Remove all strokes from the canvas (Ctrl+Shift+C or Ctrl+Delete)",
+                    )
                     .clicked()
                 {
                     self.canvas.clear();
@@ -459,6 +462,24 @@ fn drawing_mode_label(drawing_enabled: bool) -> &'static str {
     } else {
         "Draw: Off"
     }
+}
+
+fn keyboard_shortcut_pressed(
+    ctx: &egui::Context,
+    key: egui::Key,
+    require_shift: bool,
+) -> bool {
+    ctx.input_mut(|input| {
+        let modifiers = input.modifiers;
+        let command_pressed = modifiers.command || modifiers.ctrl;
+        let shift_matches = modifiers.shift == require_shift;
+
+        if command_pressed && shift_matches && input.key_pressed(key) {
+            input.consume_key(modifiers, key)
+        } else {
+            false
+        }
+    })
 }
 
 fn show_basic_pen_colors(ui: &mut egui::Ui, current_color: &mut egui::Color32) {
