@@ -60,8 +60,8 @@ pub struct AetherInkApp {
 
 impl eframe::App for AetherInkApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if self.click_through_mode && self.click_through_controller.poll_restore_shortcut() {
-            self.set_click_through_mode(ctx, false);
+        if self.click_through_controller.poll_overlay_toggle_shortcut() {
+            self.set_click_through_mode(ctx, !self.click_through_mode);
         }
 
         let temporary_drawing_active = self.click_through_mode
@@ -157,17 +157,18 @@ impl eframe::App for AetherInkApp {
                     ui.separator();
                     let temporary_drawing_label =
                         self.click_through_controller.temporary_drawing_shortcut_label();
-                    let restore_shortcut_label =
-                        self.click_through_controller.restore_shortcut_label();
+                    let overlay_toggle_shortcut_label = "Ctrl+Shift+O";
                     let click_through_status = if self.temporary_drawing_active {
                         format!(
-                            "Hold {} released to return to click-through. Press {} to restore normal mode.",
-                            temporary_drawing_label, restore_shortcut_label
+                            "Release {} to return to click-through, or press {} to toggle overlay off.",
+                            temporary_drawing_label,
+                            overlay_toggle_shortcut_label
                         )
                     } else {
                         format!(
-                            "Click-through active. Hold {} to draw or press {} to restore.",
-                            temporary_drawing_label, restore_shortcut_label
+                            "Click-through active. Hold {} to draw or press {} to toggle overlay.",
+                            temporary_drawing_label,
+                            overlay_toggle_shortcut_label
                         )
                     };
 
@@ -356,13 +357,10 @@ impl AetherInkApp {
                 });
 
                 if click_through_supported {
+                    ui.label("Overlay shortcut: Ctrl+Shift+O");
                     ui.label(format!(
                         "Hold {} to draw while click-through is enabled.",
                         self.click_through_controller.temporary_drawing_shortcut_label()
-                    ));
-                    ui.label(format!(
-                        "Restore shortcut: {}",
-                        self.click_through_controller.restore_shortcut_label()
                     ));
 
                     if is_drawing {

@@ -2,12 +2,12 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, VK_CONTROL, VK_SHIFT,
 };
 
-const RESTORE_SHORTCUT_KEY: i32 = 'X' as i32;
+const OVERLAY_TOGGLE_SHORTCUT_KEY: i32 = 'O' as i32;
 const TEMPORARY_DRAWING_KEY: i32 = VK_SHIFT as i32;
 
 #[derive(Debug, Default)]
 pub struct ClickThroughController {
-    restore_shortcut_was_pressed: bool,
+    overlay_toggle_shortcut_was_pressed: bool,
 }
 
 impl ClickThroughController {
@@ -15,17 +15,13 @@ impl ClickThroughController {
         true
     }
 
-    pub fn restore_shortcut_label(&self) -> &'static str {
-        "Ctrl+Shift+X"
-    }
-
-    pub fn poll_restore_shortcut(&mut self) -> bool {
+    pub fn poll_overlay_toggle_shortcut(&mut self) -> bool {
         let is_pressed = is_virtual_key_pressed(VK_CONTROL.into())
             && is_virtual_key_pressed(VK_SHIFT.into())
-            && is_virtual_key_pressed(RESTORE_SHORTCUT_KEY);
-        let was_pressed = self.restore_shortcut_was_pressed;
+            && is_virtual_key_pressed(OVERLAY_TOGGLE_SHORTCUT_KEY);
+        let was_pressed = self.overlay_toggle_shortcut_was_pressed;
 
-        self.restore_shortcut_was_pressed = is_pressed;
+        self.overlay_toggle_shortcut_was_pressed = is_pressed;
 
         is_pressed && !was_pressed
     }

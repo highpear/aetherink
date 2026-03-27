@@ -17,11 +17,7 @@ impl ClickThroughController {
         false
     }
 
-    pub fn restore_shortcut_label(&self) -> &'static str {
-        ""
-    }
-
-    pub fn poll_restore_shortcut(&mut self) -> bool {
+    pub fn poll_overlay_toggle_shortcut(&mut self) -> bool {
         false
     }
 
