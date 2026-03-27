@@ -46,7 +46,7 @@ Core feature of AetherInk.
 - [x] Transparent window background
 - [x] Click-through mode (Windows MVP)
 - [ ] Toggle overlay mode shortcut
-- [ ] Temporarily enable drawing while holding key
+- [x] Temporarily enable drawing while holding key
 
 Example workflow:
 Normal mode → click-through

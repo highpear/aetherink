@@ -24,4 +24,12 @@ impl ClickThroughController {
     pub fn poll_restore_shortcut(&mut self) -> bool {
         false
     }
+
+    pub fn temporary_drawing_shortcut_label(&self) -> &'static str {
+        ""
+    }
+
+    pub fn is_temporary_drawing_active(&self) -> bool {
+        false
+    }
 }

@@ -50,6 +50,7 @@ pub struct AetherInkApp {
     canvas: CanvasState,
     is_settings_window_open: bool,
     drawing_enabled: bool,
+    temporary_drawing_active: bool,
     always_on_top: bool,
     borderless_window: bool,
     click_through_mode: bool,
@@ -61,6 +62,14 @@ impl eframe::App for AetherInkApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.click_through_mode && self.click_through_controller.poll_restore_shortcut() {
             self.set_click_through_mode(ctx, false);
+        }
+
+        let temporary_drawing_active = self.click_through_mode
+            && self.drawing_enabled
+            && self.click_through_controller.is_temporary_drawing_active();
+
+        if temporary_drawing_active != self.temporary_drawing_active {
+            self.set_temporary_drawing_active(ctx, temporary_drawing_active);
         }
 
         // Keyboard shortcuts
@@ -146,10 +155,23 @@ impl eframe::App for AetherInkApp {
 
                 if self.click_through_mode {
                     ui.separator();
-                    ui.label(format!(
-                        "Click-through active. Press {} to restore.",
-                        self.click_through_controller.restore_shortcut_label()
-                    ));
+                    let temporary_drawing_label =
+                        self.click_through_controller.temporary_drawing_shortcut_label();
+                    let restore_shortcut_label =
+                        self.click_through_controller.restore_shortcut_label();
+                    let click_through_status = if self.temporary_drawing_active {
+                        format!(
+                            "Hold {} released to return to click-through. Press {} to restore normal mode.",
+                            temporary_drawing_label, restore_shortcut_label
+                        )
+                    } else {
+                        format!(
+                            "Click-through active. Hold {} to draw or press {} to restore.",
+                            temporary_drawing_label, restore_shortcut_label
+                        )
+                    };
+
+                    ui.label(click_through_status);
                 }
 
                 ui.separator();
@@ -199,7 +221,8 @@ impl AetherInkApp {
         app.apply_always_on_top(&cc.egui_ctx);
         app.apply_borderless_window(&cc.egui_ctx);
         app.click_through_mode = false;
-        app.apply_click_through_mode(&cc.egui_ctx);
+        app.temporary_drawing_active = false;
+        app.apply_pointer_passthrough(&cc.egui_ctx);
 
         app
     }
@@ -334,6 +357,10 @@ impl AetherInkApp {
 
                 if click_through_supported {
                     ui.label(format!(
+                        "Hold {} to draw while click-through is enabled.",
+                        self.click_through_controller.temporary_drawing_shortcut_label()
+                    ));
+                    ui.label(format!(
                         "Restore shortcut: {}",
                         self.click_through_controller.restore_shortcut_label()
                     ));
@@ -420,23 +447,39 @@ impl AetherInkApp {
         self.drawing_enabled = enabled;
 
         if !enabled {
+            self.temporary_drawing_active = false;
             self.canvas.stop_drawing();
         }
     }
 
     fn set_click_through_mode(&mut self, ctx: &egui::Context, enabled: bool) {
         self.click_through_mode = enabled && self.click_through_controller.is_supported();
-        self.apply_click_through_mode(ctx);
+        self.temporary_drawing_active = false;
+        self.apply_pointer_passthrough(ctx);
     }
 
-    fn apply_click_through_mode(&self, ctx: &egui::Context) {
+    fn set_temporary_drawing_active(&mut self, ctx: &egui::Context, active: bool) {
+        self.temporary_drawing_active = active && self.click_through_mode && self.drawing_enabled;
+
+        if !self.temporary_drawing_active {
+            self.canvas.stop_drawing();
+        }
+
+        self.apply_pointer_passthrough(ctx);
+    }
+
+    fn apply_pointer_passthrough(&self, ctx: &egui::Context) {
         ctx.send_viewport_cmd(egui::ViewportCommand::MousePassthrough(
-            self.click_through_mode,
+            self.effective_click_through_mode(),
         ));
 
-        if !self.click_through_mode {
+        if !self.effective_click_through_mode() {
             ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
         }
+    }
+
+    fn effective_click_through_mode(&self) -> bool {
+        self.click_through_mode && !self.temporary_drawing_active
     }
 
     fn top_bar_fill_color(&self) -> egui::Color32 {

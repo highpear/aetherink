@@ -151,7 +151,11 @@ impl CanvasState {
     }
 
     pub fn stop_drawing(&mut self) {
-        self.current_stroke = None;
+        if let Some(stroke) = self.current_stroke.take() {
+            if stroke.is_meaningful() {
+                self.strokes.push(stroke);
+            }
+        }
     }
 
     fn should_show_transparent_border(&self, response: &Response, rect: egui::Rect) -> bool {

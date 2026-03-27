@@ -3,6 +3,7 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 };
 
 const RESTORE_SHORTCUT_KEY: i32 = 'X' as i32;
+const TEMPORARY_DRAWING_KEY: i32 = VK_SHIFT as i32;
 
 #[derive(Debug, Default)]
 pub struct ClickThroughController {
@@ -27,6 +28,14 @@ impl ClickThroughController {
         self.restore_shortcut_was_pressed = is_pressed;
 
         is_pressed && !was_pressed
+    }
+
+    pub fn temporary_drawing_shortcut_label(&self) -> &'static str {
+        "Shift"
+    }
+
+    pub fn is_temporary_drawing_active(&self) -> bool {
+        is_virtual_key_pressed(TEMPORARY_DRAWING_KEY)
     }
 }
 
