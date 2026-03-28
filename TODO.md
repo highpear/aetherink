@@ -32,7 +32,7 @@ Improve drawing usability.
 - [x] Adjustable transparent background opacity
 - [x] Toggle drawing mode
 - [x] Keyboard shortcut for clear
-- [ ] Keyboard shortcut for undo
+- [x] Keyboard shortcut for undo
 - [ ] Cursor indicator for pen
 
 ---
@@ -45,8 +45,8 @@ Core feature of AetherInk.
 - [x] Borderless window mode
 - [x] Transparent window background
 - [x] Click-through mode (Windows MVP)
-- [x] Toggle overlay mode shortcut
-- [x] Temporarily enable drawing while holding key
+- [x] Keyboard shortcut for click-through mode
+- [x] Temporary drawing while holding a key
 
 Example workflow:
 Normal mode → click-through
@@ -90,13 +90,13 @@ Improve user experience.
 
 - [ ] Minimal toolbar
 - [x] Settings window
-- [ ] Default background setting
-- [ ] Transparent background opacity setting
-- [ ] Default pen color setting
-- [ ] Default pen width setting
+- [x] Persistent canvas background setting
+- [x] Persistent transparent background opacity setting
+- [ ] Persistent default pen color setting
+- [ ] Persistent default pen width setting
 - [ ] Pen selection
-- [ ] Color palette
-- [ ] Pen size slider
+- [x] Color palette
+- [x] Pen size slider
 - [x] Transparent canvas border visibility setting (always show / show near edges only)
 
 ---
