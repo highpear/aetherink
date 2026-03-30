@@ -7,13 +7,20 @@ pub mod macos;
 #[cfg(target_os = "windows")]
 pub use windows::ClickThroughController;
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "macos")]
+pub use macos::ClickThroughController;
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 #[derive(Debug, Default)]
 pub struct ClickThroughController;
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 impl ClickThroughController {
-    pub fn is_supported(&self) -> bool {
+    pub fn supports_pointer_passthrough(&self) -> bool {
+        false
+    }
+
+    pub fn supports_shortcut_monitoring(&self) -> bool {
         false
     }
 
