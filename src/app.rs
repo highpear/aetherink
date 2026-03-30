@@ -239,7 +239,11 @@ impl AetherInkApp {
         let mut borderless_window_changed = false;
         let mut click_through_mode_changed = false;
         let mut transparent_window_background_changed = false;
-        let click_through_supported = self.click_through_controller.is_supported();
+        let click_through_supported = self.click_through_controller.supports_pointer_passthrough();
+        let click_through_shortcuts_supported =
+            self.click_through_controller.supports_shortcut_monitoring();
+        let click_through_can_be_enabled =
+            click_through_supported && click_through_shortcuts_supported;
         let is_drawing = self.canvas.current_stroke.is_some();
 
         egui::Window::new("Settings")
@@ -347,7 +351,7 @@ impl AetherInkApp {
                 ui.separator();
                 ui.label("Overlay");
 
-                ui.add_enabled_ui(click_through_supported && !is_drawing, |ui| {
+                ui.add_enabled_ui(click_through_can_be_enabled && !is_drawing, |ui| {
                     if ui
                         .checkbox(&mut self.click_through_mode, "Click-through mode")
                         .changed()
@@ -357,19 +361,28 @@ impl AetherInkApp {
                 });
 
                 if click_through_supported {
-                    ui.label("Overlay shortcut: Ctrl+Shift+O");
-                    ui.label(format!(
-                        "Hold {} to draw while click-through is enabled.",
-                        self.click_through_controller.temporary_drawing_shortcut_label()
-                    ));
+                    if click_through_shortcuts_supported {
+                        ui.label("Overlay shortcut: Ctrl+Shift+O");
+                        ui.label(format!(
+                            "Hold {} to draw while click-through is enabled.",
+                            self.click_through_controller.temporary_drawing_shortcut_label()
+                        ));
+                    } else {
+                        ui.small(
+                            "Pointer passthrough is available, but overlay shortcuts are not implemented on this platform yet.",
+                        );
+                        ui.small(
+                            "Click-through stays disabled until a reliable way to return to the app is available.",
+                        );
+                    }
 
-                    if is_drawing {
+                    if click_through_can_be_enabled && is_drawing {
                         ui.small("Finish the current stroke before enabling click-through.");
-                    } else if self.click_through_mode {
+                    } else if click_through_can_be_enabled && self.click_through_mode {
                         ui.small("Mouse input is passing through to the window behind AetherInk.");
                     }
                 } else {
-                    ui.small("Click-through mode is currently available on Windows only.");
+                    ui.small("Click-through mode is not available on this platform yet.");
                 }
             });
 
@@ -451,7 +464,8 @@ impl AetherInkApp {
     }
 
     fn set_click_through_mode(&mut self, ctx: &egui::Context, enabled: bool) {
-        self.click_through_mode = enabled && self.click_through_controller.is_supported();
+        self.click_through_mode =
+            enabled && self.click_through_controller.supports_pointer_passthrough();
         self.temporary_drawing_active = false;
         self.apply_pointer_passthrough(ctx);
     }

@@ -11,7 +11,11 @@ pub struct ClickThroughController {
 }
 
 impl ClickThroughController {
-    pub fn is_supported(&self) -> bool {
+    pub fn supports_pointer_passthrough(&self) -> bool {
+        true
+    }
+
+    pub fn supports_shortcut_monitoring(&self) -> bool {
         true
     }
 

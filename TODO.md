@@ -69,7 +69,11 @@ OS-specific behavior.
 
 - [ ] Transparent window
 - [ ] Floating window level
-- [ ] Click-through behavior
+- [x] Click-through behavior
+- [x] Verify `ViewportCommand::MousePassthrough` behavior on macOS
+- [x] Add native shortcut monitoring for overlay toggle while click-through is active
+- [x] Add native shortcut monitoring for temporary drawing while click-through is active
+- [ ] Define fallback behavior when shortcut monitoring is unavailable
 
 ---
 
