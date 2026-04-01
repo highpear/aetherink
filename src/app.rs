@@ -29,17 +29,7 @@ pub struct AetherInkApp {
 
 impl eframe::App for AetherInkApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if self.click_through_controller.poll_overlay_toggle_shortcut() {
-            self.set_click_through_mode(ctx, !self.click_through_mode);
-        }
-
-        let temporary_drawing_active = self.click_through_mode
-            && self.drawing_enabled
-            && self.click_through_controller.is_temporary_drawing_active();
-
-        if temporary_drawing_active != self.temporary_drawing_active {
-            self.set_temporary_drawing_active(ctx, temporary_drawing_active);
-        }
+        self.sync_overlay_state(ctx);
 
         // Keyboard shortcuts
         if keyboard_shortcut_pressed(ctx, egui::Key::Z, false) {
@@ -262,6 +252,20 @@ impl AetherInkApp {
         }
 
         self.apply_pointer_passthrough(ctx);
+    }
+
+    fn sync_overlay_state(&mut self, ctx: &egui::Context) {
+        if self.click_through_controller.poll_overlay_toggle_shortcut() {
+            self.set_click_through_mode(ctx, !self.click_through_mode);
+        }
+
+        let temporary_drawing_active = self.click_through_mode
+            && self.drawing_enabled
+            && self.click_through_controller.is_temporary_drawing_active();
+
+        if temporary_drawing_active != self.temporary_drawing_active {
+            self.set_temporary_drawing_active(ctx, temporary_drawing_active);
+        }
     }
 
     fn apply_pointer_passthrough(&self, ctx: &egui::Context) {
