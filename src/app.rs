@@ -1,4 +1,5 @@
 mod settings;
+mod settings_window;
 mod ui;
 
 use eframe::egui;
@@ -8,9 +9,7 @@ use self::ui::{
     clear_button, drawing_mode_label, keyboard_shortcut_pressed, show_basic_pen_colors,
     undo_button,
 };
-use crate::canvas::{
-    CanvasBackground, CanvasState, TransparentCanvasBorderVisibility,
-};
+use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
 
 const APP_SETTINGS_KEY: &str = "app_settings";
@@ -196,191 +195,6 @@ impl AetherInkApp {
         app.apply_pointer_passthrough(&cc.egui_ctx);
 
         app
-    }
-
-    fn show_settings_window(&mut self, ctx: &egui::Context) {
-        if !self.is_settings_window_open {
-            return;
-        }
-
-        let mut is_settings_window_open = self.is_settings_window_open;
-        let mut drawing_enabled_changed = false;
-        let mut always_on_top_changed = false;
-        let mut borderless_window_changed = false;
-        let mut click_through_mode_changed = false;
-        let mut transparent_window_background_changed = false;
-        let click_through_supported = self.click_through_controller.supports_pointer_passthrough();
-        let click_through_shortcuts_supported =
-            self.click_through_controller.supports_shortcut_monitoring();
-        let click_through_can_be_enabled =
-            click_through_supported && click_through_shortcuts_supported;
-        let is_drawing = self.canvas.current_stroke.is_some();
-
-        egui::Window::new("Settings")
-            .open(&mut is_settings_window_open)
-            .collapsible(false)
-            .resizable(false)
-            .default_width(260.0)
-            .show(ctx, |ui| {
-                ui.label("Canvas");
-
-                ui.horizontal(|ui| {
-                    ui.label("Background:");
-                    egui::ComboBox::from_id_salt("settings_canvas_background")
-                        .selected_text(self.canvas.background.label())
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.canvas.background,
-                                CanvasBackground::White,
-                                CanvasBackground::White.label(),
-                            );
-                            ui.selectable_value(
-                                &mut self.canvas.background,
-                                CanvasBackground::Transparent,
-                                CanvasBackground::Transparent.label(),
-                            );
-                        });
-                });
-
-                ui.add_enabled_ui(
-                    self.canvas.background == CanvasBackground::Transparent,
-                    |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label("Opacity:");
-                            ui.add(
-                                egui::Slider::new(
-                                    &mut self.canvas.transparent_background_opacity,
-                                    0.0..=1.0,
-                                )
-                                .show_value(true)
-                                .fixed_decimals(2),
-                            );
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.label("Border:");
-                            egui::ComboBox::from_id_salt("settings_canvas_border_visibility")
-                                .selected_text(
-                                    self.canvas
-                                        .transparent_canvas_border_visibility
-                                        .label(),
-                                )
-                                .show_ui(ui, |ui| {
-                                    ui.selectable_value(
-                                        &mut self.canvas.transparent_canvas_border_visibility,
-                                        TransparentCanvasBorderVisibility::Always,
-                                        TransparentCanvasBorderVisibility::Always.label(),
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.canvas.transparent_canvas_border_visibility,
-                                        TransparentCanvasBorderVisibility::NearEdges,
-                                        TransparentCanvasBorderVisibility::NearEdges.label(),
-                                    );
-                                });
-                        });
-                    },
-                );
-
-                ui.separator();
-
-                if ui
-                    .checkbox(&mut self.drawing_enabled, "Enable drawing")
-                    .changed()
-                {
-                    drawing_enabled_changed = true;
-                }
-
-                if ui
-                    .checkbox(&mut self.always_on_top, "Always on top")
-                    .changed()
-                {
-                    always_on_top_changed = true;
-                }
-
-                if ui
-                    .checkbox(&mut self.borderless_window, "Borderless window")
-                    .changed()
-                {
-                    borderless_window_changed = true;
-                }
-
-                if ui
-                    .checkbox(
-                        &mut self.transparent_window_background,
-                        "Transparent window background",
-                    )
-                    .changed()
-                {
-                    transparent_window_background_changed = true;
-                }
-
-                if self.transparent_window_background {
-                    ui.small("The window frame and panel background blend into the screen.");
-                }
-
-                ui.separator();
-                ui.label("Overlay");
-
-                ui.add_enabled_ui(click_through_can_be_enabled && !is_drawing, |ui| {
-                    if ui
-                        .checkbox(&mut self.click_through_mode, "Click-through mode")
-                        .changed()
-                    {
-                        click_through_mode_changed = true;
-                    }
-                });
-
-                if click_through_supported {
-                    if click_through_shortcuts_supported {
-                        ui.label("Overlay shortcut: Ctrl+Shift+O");
-                        ui.label(format!(
-                            "Hold {} to draw while click-through is enabled.",
-                            self.click_through_controller.temporary_drawing_shortcut_label()
-                        ));
-                    } else {
-                        ui.small(
-                            "Pointer passthrough is available, but overlay shortcuts are not implemented on this platform yet.",
-                        );
-                        ui.small(
-                            "Click-through stays disabled until a reliable way to return to the app is available.",
-                        );
-                    }
-
-                    if click_through_can_be_enabled && is_drawing {
-                        ui.small("Finish the current stroke before enabling click-through.");
-                    } else if click_through_can_be_enabled && self.click_through_mode {
-                        ui.small("Mouse input is passing through to the window behind AetherInk.");
-                    }
-                } else {
-                    ui.small("Click-through mode is not available on this platform yet.");
-                }
-            });
-
-        self.is_settings_window_open = is_settings_window_open;
-
-        if drawing_enabled_changed {
-            self.set_drawing_enabled(self.drawing_enabled);
-        }
-
-        if always_on_top_changed {
-            self.apply_always_on_top(ctx);
-        }
-
-        if borderless_window_changed {
-            self.apply_borderless_window(ctx);
-        }
-
-        if transparent_window_background_changed {
-            ctx.request_repaint();
-        }
-
-        if click_through_mode_changed {
-            self.set_click_through_mode(ctx, self.click_through_mode);
-
-            if self.click_through_mode {
-                self.is_settings_window_open = false;
-            }
-        }
     }
 
     fn apply_settings(&mut self, settings: AppSettings) {
