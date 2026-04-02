@@ -132,11 +132,7 @@ impl CanvasState {
         }
 
         if drawing_enabled && response.drag_stopped() {
-            if let Some(stroke) = self.current_stroke.take() {
-                if stroke.is_meaningful() {
-                    self.strokes.push(stroke);
-                }
-            }
+            self.finish_current_stroke();
         }
 
         for stroke in &self.strokes {
@@ -151,6 +147,10 @@ impl CanvasState {
     }
 
     pub fn stop_drawing(&mut self) {
+        self.finish_current_stroke();
+    }
+
+    fn finish_current_stroke(&mut self) {
         if let Some(stroke) = self.current_stroke.take() {
             if stroke.is_meaningful() {
                 self.strokes.push(stroke);
