@@ -22,9 +22,9 @@ impl Default for AppSettings {
         let canvas = CanvasState::default();
 
         Self {
-            background: canvas.background,
-            transparent_background_opacity: canvas.transparent_background_opacity,
-            transparent_canvas_border_visibility: canvas.transparent_canvas_border_visibility,
+            background: canvas.background(),
+            transparent_background_opacity: canvas.transparent_background_opacity(),
+            transparent_canvas_border_visibility: canvas.transparent_canvas_border_visibility(),
             drawing_enabled: true,
             always_on_top: false,
             borderless_window: false,
