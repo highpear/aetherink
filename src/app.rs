@@ -42,105 +42,7 @@ impl eframe::App for AetherInkApp {
             self.canvas.clear();
         }
 
-        egui::TopBottomPanel::top("top_bar")
-            .frame(egui::Frame::NONE.fill(self.top_bar_fill_color()))
-            .show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                if self.borderless_window {
-                    ui.heading("AetherInk");
-                    ui.separator();
-
-                    let drag_response = ui.add(
-                        egui::Label::new("Drag window").sense(egui::Sense::click_and_drag()),
-                    );
-
-                    if drag_response.drag_started() {
-                        ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
-                    }
-
-                    ui.separator();
-                }
-
-                ui.label("Color:");
-                ui.color_edit_button_srgba(&mut self.canvas.current_color);
-                show_basic_pen_colors(ui, &mut self.canvas.current_color);
-
-                ui.label("Width:");
-                ui.add(egui::Slider::new(
-                    &mut self.canvas.current_width,
-                    1.0..=20.0,
-                ));
-
-                ui.separator();
-
-                if ui
-                    .selectable_label(self.drawing_enabled, drawing_mode_label(self.drawing_enabled))
-                    .on_hover_text("Toggle whether mouse dragging draws on the canvas")
-                    .clicked()
-                {
-                    self.set_drawing_enabled(!self.drawing_enabled);
-                }
-
-                ui.separator();
-
-                let has_strokes = self.canvas.has_strokes();
-
-                if ui
-                    .add_enabled(has_strokes, undo_button())
-                    .on_hover_text("Remove the last stroke (Ctrl+Z)")
-                    .clicked()
-                {
-                    self.canvas.undo();
-                }
-
-                if ui
-                    .add_enabled(has_strokes, clear_button())
-                    .on_hover_text(
-                        "Remove all strokes from the canvas (Ctrl+Shift+C or Ctrl+Delete)",
-                    )
-                    .clicked()
-                {
-                    self.canvas.clear();
-                }
-
-                ui.separator();
-
-                if ui
-                    .checkbox(&mut self.always_on_top, "Always on top")
-                    .changed()
-                {
-                    self.apply_always_on_top(ctx);
-                }
-
-                if self.click_through_mode {
-                    ui.separator();
-                    let temporary_drawing_label =
-                        self.click_through_controller.temporary_drawing_shortcut_label();
-                    let overlay_toggle_shortcut_label = "Ctrl+Shift+O";
-                    let click_through_status = if self.temporary_drawing_active {
-                        format!(
-                            "Release {} to return to click-through, or press {} to toggle overlay off.",
-                            temporary_drawing_label,
-                            overlay_toggle_shortcut_label
-                        )
-                    } else {
-                        format!(
-                            "Click-through active. Hold {} to draw or press {} to toggle overlay.",
-                            temporary_drawing_label,
-                            overlay_toggle_shortcut_label
-                        )
-                    };
-
-                    ui.label(click_through_status);
-                }
-
-                ui.separator();
-
-                if ui.button("Settings").clicked() {
-                    self.is_settings_window_open = true;
-                }
-            });
-        });
+        self.show_top_bar(ctx);
 
         self.show_settings_window(ctx);
 
@@ -266,6 +168,103 @@ impl AetherInkApp {
         if temporary_drawing_active != self.temporary_drawing_active {
             self.set_temporary_drawing_active(ctx, temporary_drawing_active);
         }
+    }
+
+    fn show_top_bar(&mut self, ctx: &egui::Context) {
+        egui::TopBottomPanel::top("top_bar")
+            .frame(egui::Frame::NONE.fill(self.top_bar_fill_color()))
+            .show(ctx, |ui| {
+                self.show_top_bar_contents(ui, ctx);
+            });
+    }
+
+    fn show_top_bar_contents(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        ui.horizontal(|ui| {
+            if self.borderless_window {
+                ui.heading("AetherInk");
+                ui.separator();
+
+                let drag_response =
+                    ui.add(egui::Label::new("Drag window").sense(egui::Sense::click_and_drag()));
+
+                if drag_response.drag_started() {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
+                }
+
+                ui.separator();
+            }
+
+            ui.label("Color:");
+            ui.color_edit_button_srgba(&mut self.canvas.current_color);
+            show_basic_pen_colors(ui, &mut self.canvas.current_color);
+
+            ui.label("Width:");
+            ui.add(egui::Slider::new(&mut self.canvas.current_width, 1.0..=20.0));
+
+            ui.separator();
+
+            if ui
+                .selectable_label(self.drawing_enabled, drawing_mode_label(self.drawing_enabled))
+                .on_hover_text("Toggle whether mouse dragging draws on the canvas")
+                .clicked()
+            {
+                self.set_drawing_enabled(!self.drawing_enabled);
+            }
+
+            ui.separator();
+
+            let has_strokes = self.canvas.has_strokes();
+
+            if ui
+                .add_enabled(has_strokes, undo_button())
+                .on_hover_text("Remove the last stroke (Ctrl+Z)")
+                .clicked()
+            {
+                self.canvas.undo();
+            }
+
+            if ui
+                .add_enabled(has_strokes, clear_button())
+                .on_hover_text("Remove all strokes from the canvas (Ctrl+Shift+C or Ctrl+Delete)")
+                .clicked()
+            {
+                self.canvas.clear();
+            }
+
+            ui.separator();
+
+            if ui.checkbox(&mut self.always_on_top, "Always on top").changed() {
+                self.apply_always_on_top(ctx);
+            }
+
+            if self.click_through_mode {
+                ui.separator();
+                let temporary_drawing_label =
+                    self.click_through_controller.temporary_drawing_shortcut_label();
+                let overlay_toggle_shortcut_label = "Ctrl+Shift+O";
+                let click_through_status = if self.temporary_drawing_active {
+                    format!(
+                        "Release {} to return to click-through, or press {} to toggle overlay off.",
+                        temporary_drawing_label,
+                        overlay_toggle_shortcut_label
+                    )
+                } else {
+                    format!(
+                        "Click-through active. Hold {} to draw or press {} to toggle overlay.",
+                        temporary_drawing_label,
+                        overlay_toggle_shortcut_label
+                    )
+                };
+
+                ui.label(click_through_status);
+            }
+
+            ui.separator();
+
+            if ui.button("Settings").clicked() {
+                self.is_settings_window_open = true;
+            }
+        });
     }
 
     fn apply_pointer_passthrough(&self, ctx: &egui::Context) {
