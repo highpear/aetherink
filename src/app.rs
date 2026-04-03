@@ -90,9 +90,10 @@ impl AetherInkApp {
     }
 
     fn apply_settings(&mut self, settings: AppSettings) {
-        self.canvas.background = settings.background;
-        self.canvas.transparent_background_opacity = settings.transparent_background_opacity;
-        self.canvas.transparent_canvas_border_visibility =
+        *self.canvas.background_mut() = settings.background;
+        *self.canvas.transparent_background_opacity_mut() =
+            settings.transparent_background_opacity;
+        *self.canvas.transparent_canvas_border_visibility_mut() =
             settings.transparent_canvas_border_visibility;
         self.drawing_enabled = settings.drawing_enabled;
         self.always_on_top = settings.always_on_top;
@@ -103,9 +104,11 @@ impl AetherInkApp {
 
     fn collect_settings(&self) -> AppSettings {
         AppSettings {
-            background: self.canvas.background,
-            transparent_background_opacity: self.canvas.transparent_background_opacity,
-            transparent_canvas_border_visibility: self.canvas.transparent_canvas_border_visibility,
+            background: self.canvas.background(),
+            transparent_background_opacity: self.canvas.transparent_background_opacity(),
+            transparent_canvas_border_visibility: self
+                .canvas
+                .transparent_canvas_border_visibility(),
             drawing_enabled: self.drawing_enabled,
             always_on_top: self.always_on_top,
             borderless_window: self.borderless_window,
@@ -210,11 +213,11 @@ impl AetherInkApp {
 
     fn show_pen_controls(&mut self, ui: &mut egui::Ui) {
         ui.label("Color:");
-        ui.color_edit_button_srgba(&mut self.canvas.current_color);
-        show_basic_pen_colors(ui, &mut self.canvas.current_color);
+        ui.color_edit_button_srgba(self.canvas.current_color_mut());
+        show_basic_pen_colors(ui, self.canvas.current_color_mut());
 
         ui.label("Width:");
-        ui.add(egui::Slider::new(&mut self.canvas.current_width, 1.0..=20.0));
+        ui.add(egui::Slider::new(self.canvas.current_width_mut(), 1.0..=20.0));
         ui.separator();
     }
 

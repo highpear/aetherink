@@ -39,13 +39,13 @@ impl TransparentCanvasBorderVisibility {
 
 #[derive(Debug)]
 pub struct CanvasState {
-    pub strokes: Vec<DrawStroke>,
-    pub current_stroke: Option<DrawStroke>,
-    pub current_color: Color32,
-    pub current_width: f32,
-    pub background: CanvasBackground,
-    pub transparent_background_opacity: f32,
-    pub transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
+    strokes: Vec<DrawStroke>,
+    current_stroke: Option<DrawStroke>,
+    current_color: Color32,
+    current_width: f32,
+    background: CanvasBackground,
+    transparent_background_opacity: f32,
+    transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
 }
 
 impl Default for CanvasState {
@@ -63,8 +63,28 @@ impl Default for CanvasState {
 }
 
 impl CanvasState {
+    pub fn current_color_mut(&mut self) -> &mut Color32 {
+        &mut self.current_color
+    }
+
+    pub fn current_width_mut(&mut self) -> &mut f32 {
+        &mut self.current_width
+    }
+
     pub fn has_strokes(&self) -> bool {
         !self.strokes.is_empty()
+    }
+
+    pub fn is_drawing(&self) -> bool {
+        self.current_stroke.is_some()
+    }
+
+    pub fn background(&self) -> CanvasBackground {
+        self.background
+    }
+
+    pub fn background_mut(&mut self) -> &mut CanvasBackground {
+        &mut self.background
     }
 
     pub fn background_color(&self) -> Color32 {
@@ -75,6 +95,24 @@ impl CanvasState {
                 Color32::from_white_alpha(alpha)
             }
         }
+    }
+
+    pub fn transparent_background_opacity(&self) -> f32 {
+        self.transparent_background_opacity
+    }
+
+    pub fn transparent_background_opacity_mut(&mut self) -> &mut f32 {
+        &mut self.transparent_background_opacity
+    }
+
+    pub fn transparent_canvas_border_visibility(&self) -> TransparentCanvasBorderVisibility {
+        self.transparent_canvas_border_visibility
+    }
+
+    pub fn transparent_canvas_border_visibility_mut(
+        &mut self,
+    ) -> &mut TransparentCanvasBorderVisibility {
+        &mut self.transparent_canvas_border_visibility
     }
 
     pub fn clear(&mut self) {

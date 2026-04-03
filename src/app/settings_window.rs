@@ -20,7 +20,7 @@ impl AetherInkApp {
             self.click_through_controller.supports_shortcut_monitoring();
         let click_through_can_be_enabled =
             click_through_supported && click_through_shortcuts_supported;
-        let is_drawing = self.canvas.current_stroke.is_some();
+        let is_drawing = self.canvas.is_drawing();
 
         egui::Window::new("Settings")
             .open(&mut is_settings_window_open)
@@ -33,15 +33,15 @@ impl AetherInkApp {
                 ui.horizontal(|ui| {
                     ui.label("Background:");
                     egui::ComboBox::from_id_salt("settings_canvas_background")
-                        .selected_text(self.canvas.background.label())
+                        .selected_text(self.canvas.background().label())
                         .show_ui(ui, |ui| {
                             ui.selectable_value(
-                                &mut self.canvas.background,
+                                self.canvas.background_mut(),
                                 CanvasBackground::White,
                                 CanvasBackground::White.label(),
                             );
                             ui.selectable_value(
-                                &mut self.canvas.background,
+                                self.canvas.background_mut(),
                                 CanvasBackground::Transparent,
                                 CanvasBackground::Transparent.label(),
                             );
@@ -49,13 +49,13 @@ impl AetherInkApp {
                 });
 
                 ui.add_enabled_ui(
-                    self.canvas.background == CanvasBackground::Transparent,
+                    self.canvas.background() == CanvasBackground::Transparent,
                     |ui| {
                         ui.horizontal(|ui| {
                             ui.label("Opacity:");
                             ui.add(
                                 egui::Slider::new(
-                                    &mut self.canvas.transparent_background_opacity,
+                                    self.canvas.transparent_background_opacity_mut(),
                                     0.0..=1.0,
                                 )
                                 .show_value(true)
@@ -68,17 +68,17 @@ impl AetherInkApp {
                             egui::ComboBox::from_id_salt("settings_canvas_border_visibility")
                                 .selected_text(
                                     self.canvas
-                                        .transparent_canvas_border_visibility
+                                        .transparent_canvas_border_visibility()
                                         .label(),
                                 )
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
-                                        &mut self.canvas.transparent_canvas_border_visibility,
+                                        self.canvas.transparent_canvas_border_visibility_mut(),
                                         TransparentCanvasBorderVisibility::Always,
                                         TransparentCanvasBorderVisibility::Always.label(),
                                     );
                                     ui.selectable_value(
-                                        &mut self.canvas.transparent_canvas_border_visibility,
+                                        self.canvas.transparent_canvas_border_visibility_mut(),
                                         TransparentCanvasBorderVisibility::NearEdges,
                                         TransparentCanvasBorderVisibility::NearEdges.label(),
                                     );
