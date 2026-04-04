@@ -4,10 +4,9 @@ mod ui;
 
 use eframe::egui;
 
-use self::settings::AppSettings;
+use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
-    clear_button, drawing_mode_label, keyboard_shortcut_pressed, show_basic_pen_colors,
-    undo_button,
+    clear_button, drawing_mode_label, keyboard_shortcut_pressed, show_basic_pen_colors, undo_button,
 };
 use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
@@ -17,13 +16,9 @@ const APP_SETTINGS_KEY: &str = "app_settings";
 #[derive(Debug, Default)]
 pub struct AetherInkApp {
     canvas: CanvasState,
+    overlay: OverlaySettings,
     is_settings_window_open: bool,
-    drawing_enabled: bool,
     temporary_drawing_active: bool,
-    always_on_top: bool,
-    borderless_window: bool,
-    click_through_mode: bool,
-    transparent_window_background: bool,
     click_through_controller: ClickThroughController,
 }
 
@@ -31,7 +26,6 @@ impl eframe::App for AetherInkApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.sync_overlay_state(ctx);
 
-        // Keyboard shortcuts
         if keyboard_shortcut_pressed(ctx, egui::Key::Z, false) {
             self.canvas.undo();
         }
@@ -43,19 +37,18 @@ impl eframe::App for AetherInkApp {
         }
 
         self.show_top_bar(ctx);
-
         self.show_settings_window(ctx);
 
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE.fill(self.central_panel_fill_color()))
             .show(ctx, |ui| {
-                if self.drawing_enabled {
+                if self.overlay.drawing_enabled {
                     ui.label("Drag mouse to draw.");
                 } else {
                     ui.label("Drawing paused. Enable Draw to edit the canvas.");
                 }
 
-                self.canvas.ui(ui, self.drawing_enabled);
+                self.canvas.ui(ui, self.overlay.drawing_enabled);
             });
 
         ctx.request_repaint();
@@ -82,7 +75,7 @@ impl AetherInkApp {
 
         app.apply_always_on_top(&cc.egui_ctx);
         app.apply_borderless_window(&cc.egui_ctx);
-        app.click_through_mode = false;
+        app.overlay.click_through_mode = false;
         app.temporary_drawing_active = false;
         app.apply_pointer_passthrough(&cc.egui_ctx);
 
@@ -90,35 +83,19 @@ impl AetherInkApp {
     }
 
     fn apply_settings(&mut self, settings: AppSettings) {
-        *self.canvas.background_mut() = settings.background;
-        *self.canvas.transparent_background_opacity_mut() =
-            settings.transparent_background_opacity;
-        *self.canvas.transparent_canvas_border_visibility_mut() =
-            settings.transparent_canvas_border_visibility;
-        self.drawing_enabled = settings.drawing_enabled;
-        self.always_on_top = settings.always_on_top;
-        self.borderless_window = settings.borderless_window;
-        self.click_through_mode = settings.click_through_mode;
-        self.transparent_window_background = settings.transparent_window_background;
+        self.canvas.apply_settings(settings.canvas);
+        self.overlay = settings.overlay;
     }
 
     fn collect_settings(&self) -> AppSettings {
         AppSettings {
-            background: self.canvas.background(),
-            transparent_background_opacity: self.canvas.transparent_background_opacity(),
-            transparent_canvas_border_visibility: self
-                .canvas
-                .transparent_canvas_border_visibility(),
-            drawing_enabled: self.drawing_enabled,
-            always_on_top: self.always_on_top,
-            borderless_window: self.borderless_window,
-            click_through_mode: self.click_through_mode,
-            transparent_window_background: self.transparent_window_background,
+            canvas: self.canvas.settings(),
+            overlay: self.overlay.clone(),
         }
     }
 
     fn apply_always_on_top(&self, ctx: &egui::Context) {
-        let window_level = if self.always_on_top {
+        let window_level = if self.overlay.always_on_top {
             egui::viewport::WindowLevel::AlwaysOnTop
         } else {
             egui::viewport::WindowLevel::Normal
@@ -129,12 +106,12 @@ impl AetherInkApp {
 
     fn apply_borderless_window(&self, ctx: &egui::Context) {
         ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(
-            !self.borderless_window,
+            !self.overlay.borderless_window,
         ));
     }
 
     fn set_drawing_enabled(&mut self, enabled: bool) {
-        self.drawing_enabled = enabled;
+        self.overlay.drawing_enabled = enabled;
 
         if !enabled {
             self.temporary_drawing_active = false;
@@ -143,14 +120,15 @@ impl AetherInkApp {
     }
 
     fn set_click_through_mode(&mut self, ctx: &egui::Context, enabled: bool) {
-        self.click_through_mode =
+        self.overlay.click_through_mode =
             enabled && self.click_through_controller.supports_pointer_passthrough();
         self.temporary_drawing_active = false;
         self.apply_pointer_passthrough(ctx);
     }
 
     fn set_temporary_drawing_active(&mut self, ctx: &egui::Context, active: bool) {
-        self.temporary_drawing_active = active && self.click_through_mode && self.drawing_enabled;
+        self.temporary_drawing_active =
+            active && self.overlay.click_through_mode && self.overlay.drawing_enabled;
 
         if !self.temporary_drawing_active {
             self.canvas.stop_drawing();
@@ -161,11 +139,11 @@ impl AetherInkApp {
 
     fn sync_overlay_state(&mut self, ctx: &egui::Context) {
         if self.click_through_controller.poll_overlay_toggle_shortcut() {
-            self.set_click_through_mode(ctx, !self.click_through_mode);
+            self.set_click_through_mode(ctx, !self.overlay.click_through_mode);
         }
 
-        let temporary_drawing_active = self.click_through_mode
-            && self.drawing_enabled
+        let temporary_drawing_active = self.overlay.click_through_mode
+            && self.overlay.drawing_enabled
             && self.click_through_controller.is_temporary_drawing_active();
 
         if temporary_drawing_active != self.temporary_drawing_active {
@@ -194,7 +172,7 @@ impl AetherInkApp {
     }
 
     fn show_window_drag_handle(&self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        if !self.borderless_window {
+        if !self.overlay.borderless_window {
             return;
         }
 
@@ -217,17 +195,23 @@ impl AetherInkApp {
         show_basic_pen_colors(ui, self.canvas.current_color_mut());
 
         ui.label("Width:");
-        ui.add(egui::Slider::new(self.canvas.current_width_mut(), 1.0..=20.0));
+        ui.add(egui::Slider::new(
+            self.canvas.current_width_mut(),
+            1.0..=20.0,
+        ));
         ui.separator();
     }
 
     fn show_drawing_mode_toggle(&mut self, ui: &mut egui::Ui) {
         if ui
-            .selectable_label(self.drawing_enabled, drawing_mode_label(self.drawing_enabled))
+            .selectable_label(
+                self.overlay.drawing_enabled,
+                drawing_mode_label(self.overlay.drawing_enabled),
+            )
             .on_hover_text("Toggle whether mouse dragging draws on the canvas")
             .clicked()
         {
-            self.set_drawing_enabled(!self.drawing_enabled);
+            self.set_drawing_enabled(!self.overlay.drawing_enabled);
         }
 
         ui.separator();
@@ -256,30 +240,33 @@ impl AetherInkApp {
     }
 
     fn show_always_on_top_toggle(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        if ui.checkbox(&mut self.always_on_top, "Always on top").changed() {
+        if ui
+            .checkbox(&mut self.overlay.always_on_top, "Always on top")
+            .changed()
+        {
             self.apply_always_on_top(ctx);
         }
     }
 
     fn show_overlay_status(&self, ui: &mut egui::Ui) {
-        if !self.click_through_mode {
+        if !self.overlay.click_through_mode {
             return;
         }
 
         ui.separator();
-        let temporary_drawing_label = self.click_through_controller.temporary_drawing_shortcut_label();
+        let temporary_drawing_label = self
+            .click_through_controller
+            .temporary_drawing_shortcut_label();
         let overlay_toggle_shortcut_label = "Ctrl+Shift+O";
         let click_through_status = if self.temporary_drawing_active {
             format!(
                 "Release {} to return to click-through, or press {} to toggle overlay off.",
-                temporary_drawing_label,
-                overlay_toggle_shortcut_label
+                temporary_drawing_label, overlay_toggle_shortcut_label
             )
         } else {
             format!(
                 "Click-through active. Hold {} to draw or press {} to toggle overlay.",
-                temporary_drawing_label,
-                overlay_toggle_shortcut_label
+                temporary_drawing_label, overlay_toggle_shortcut_label
             )
         };
 
@@ -305,11 +292,11 @@ impl AetherInkApp {
     }
 
     fn effective_click_through_mode(&self) -> bool {
-        self.click_through_mode && !self.temporary_drawing_active
+        self.overlay.click_through_mode && !self.temporary_drawing_active
     }
 
     fn top_bar_fill_color(&self) -> egui::Color32 {
-        if self.transparent_window_background {
+        if self.overlay.transparent_window_background {
             egui::Color32::from_rgba_unmultiplied(248, 246, 240, 168)
         } else {
             egui::Color32::from_rgba_unmultiplied(248, 246, 240, 245)
@@ -317,7 +304,7 @@ impl AetherInkApp {
     }
 
     fn central_panel_fill_color(&self) -> egui::Color32 {
-        if self.transparent_window_background {
+        if self.overlay.transparent_window_background {
             egui::Color32::TRANSPARENT
         } else {
             self.canvas.background_color()

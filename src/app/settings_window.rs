@@ -67,9 +67,7 @@ impl AetherInkApp {
                             ui.label("Border:");
                             egui::ComboBox::from_id_salt("settings_canvas_border_visibility")
                                 .selected_text(
-                                    self.canvas
-                                        .transparent_canvas_border_visibility()
-                                        .label(),
+                                    self.canvas.transparent_canvas_border_visibility().label(),
                                 )
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
@@ -90,21 +88,21 @@ impl AetherInkApp {
                 ui.separator();
 
                 if ui
-                    .checkbox(&mut self.drawing_enabled, "Enable drawing")
+                    .checkbox(&mut self.overlay.drawing_enabled, "Enable drawing")
                     .changed()
                 {
                     drawing_enabled_changed = true;
                 }
 
                 if ui
-                    .checkbox(&mut self.always_on_top, "Always on top")
+                    .checkbox(&mut self.overlay.always_on_top, "Always on top")
                     .changed()
                 {
                     always_on_top_changed = true;
                 }
 
                 if ui
-                    .checkbox(&mut self.borderless_window, "Borderless window")
+                    .checkbox(&mut self.overlay.borderless_window, "Borderless window")
                     .changed()
                 {
                     borderless_window_changed = true;
@@ -112,7 +110,7 @@ impl AetherInkApp {
 
                 if ui
                     .checkbox(
-                        &mut self.transparent_window_background,
+                        &mut self.overlay.transparent_window_background,
                         "Transparent window background",
                     )
                     .changed()
@@ -120,7 +118,7 @@ impl AetherInkApp {
                     transparent_window_background_changed = true;
                 }
 
-                if self.transparent_window_background {
+                if self.overlay.transparent_window_background {
                     ui.small("The window frame and panel background blend into the screen.");
                 }
 
@@ -129,7 +127,7 @@ impl AetherInkApp {
 
                 ui.add_enabled_ui(click_through_can_be_enabled && !is_drawing, |ui| {
                     if ui
-                        .checkbox(&mut self.click_through_mode, "Click-through mode")
+                        .checkbox(&mut self.overlay.click_through_mode, "Click-through mode")
                         .changed()
                     {
                         click_through_mode_changed = true;
@@ -154,7 +152,7 @@ impl AetherInkApp {
 
                     if click_through_can_be_enabled && is_drawing {
                         ui.small("Finish the current stroke before enabling click-through.");
-                    } else if click_through_can_be_enabled && self.click_through_mode {
+                    } else if click_through_can_be_enabled && self.overlay.click_through_mode {
                         ui.small("Mouse input is passing through to the window behind AetherInk.");
                     }
                 } else {
@@ -165,7 +163,7 @@ impl AetherInkApp {
         self.is_settings_window_open = is_settings_window_open;
 
         if drawing_enabled_changed {
-            self.set_drawing_enabled(self.drawing_enabled);
+            self.set_drawing_enabled(self.overlay.drawing_enabled);
         }
 
         if always_on_top_changed {
@@ -181,9 +179,9 @@ impl AetherInkApp {
         }
 
         if click_through_mode_changed {
-            self.set_click_through_mode(ctx, self.click_through_mode);
+            self.set_click_through_mode(ctx, self.overlay.click_through_mode);
 
-            if self.click_through_mode {
+            if self.overlay.click_through_mode {
                 self.is_settings_window_open = false;
             }
         }

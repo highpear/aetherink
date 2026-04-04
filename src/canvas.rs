@@ -37,15 +37,30 @@ impl TransparentCanvasBorderVisibility {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CanvasSettings {
+    pub background: CanvasBackground,
+    pub transparent_background_opacity: f32,
+    pub transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
+}
+
+impl Default for CanvasSettings {
+    fn default() -> Self {
+        Self {
+            background: CanvasBackground::White,
+            transparent_background_opacity: 0.0,
+            transparent_canvas_border_visibility: TransparentCanvasBorderVisibility::NearEdges,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct CanvasState {
     strokes: Vec<DrawStroke>,
     current_stroke: Option<DrawStroke>,
     current_color: Color32,
     current_width: f32,
-    background: CanvasBackground,
-    transparent_background_opacity: f32,
-    transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
+    settings: CanvasSettings,
 }
 
 impl Default for CanvasState {
@@ -55,9 +70,7 @@ impl Default for CanvasState {
             current_stroke: None,
             current_color: Color32::BLACK,
             current_width: 2.0,
-            background: CanvasBackground::White,
-            transparent_background_opacity: 0.0,
-            transparent_canvas_border_visibility: TransparentCanvasBorderVisibility::NearEdges,
+            settings: CanvasSettings::default(),
         }
     }
 }
@@ -71,6 +84,14 @@ impl CanvasState {
         &mut self.current_width
     }
 
+    pub fn apply_settings(&mut self, settings: CanvasSettings) {
+        self.settings = settings;
+    }
+
+    pub fn settings(&self) -> CanvasSettings {
+        self.settings.clone()
+    }
+
     pub fn has_strokes(&self) -> bool {
         !self.strokes.is_empty()
     }
@@ -80,39 +101,36 @@ impl CanvasState {
     }
 
     pub fn background(&self) -> CanvasBackground {
-        self.background
+        self.settings.background
     }
 
     pub fn background_mut(&mut self) -> &mut CanvasBackground {
-        &mut self.background
+        &mut self.settings.background
     }
 
     pub fn background_color(&self) -> Color32 {
-        match self.background {
+        match self.settings.background {
             CanvasBackground::White => DEFAULT_WHITE_BACKGROUND,
             CanvasBackground::Transparent => {
-                let alpha = (self.transparent_background_opacity.clamp(0.0, 1.0) * 255.0) as u8;
+                let alpha =
+                    (self.settings.transparent_background_opacity.clamp(0.0, 1.0) * 255.0) as u8;
                 Color32::from_white_alpha(alpha)
             }
         }
     }
 
-    pub fn transparent_background_opacity(&self) -> f32 {
-        self.transparent_background_opacity
-    }
-
     pub fn transparent_background_opacity_mut(&mut self) -> &mut f32 {
-        &mut self.transparent_background_opacity
+        &mut self.settings.transparent_background_opacity
     }
 
     pub fn transparent_canvas_border_visibility(&self) -> TransparentCanvasBorderVisibility {
-        self.transparent_canvas_border_visibility
+        self.settings.transparent_canvas_border_visibility
     }
 
     pub fn transparent_canvas_border_visibility_mut(
         &mut self,
     ) -> &mut TransparentCanvasBorderVisibility {
-        &mut self.transparent_canvas_border_visibility
+        &mut self.settings.transparent_canvas_border_visibility
     }
 
     pub fn clear(&mut self) {
@@ -197,11 +215,11 @@ impl CanvasState {
     }
 
     fn should_show_transparent_border(&self, response: &Response, rect: egui::Rect) -> bool {
-        if self.background != CanvasBackground::Transparent {
+        if self.settings.background != CanvasBackground::Transparent {
             return false;
         }
 
-        match self.transparent_canvas_border_visibility {
+        match self.settings.transparent_canvas_border_visibility {
             TransparentCanvasBorderVisibility::Always => true,
             TransparentCanvasBorderVisibility::NearEdges => response
                 .hover_pos()
