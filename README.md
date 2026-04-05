@@ -9,9 +9,13 @@ A lightweight desktop overlay drawing app for Windows and macOS.
 - Transparent and always-on-top workflows that stay out of the way
 - Cross-platform desktop support for Windows and macOS
 
+## Current Status
+
+AetherInk is currently an early MVP focused on stable freehand drawing and the first usable overlay workflow.
+
 ## Current Features
 
-- Black line drawing with mouse drag
+- Freehand drawing with mouse drag
 - Toggle drawing mode
 - Adjustable pen color
 - Adjustable pen width
@@ -25,10 +29,53 @@ A lightweight desktop overlay drawing app for Windows and macOS.
 - Always-on-top window toggle
 - Borderless window toggle
 - Transparent window background toggle
-- Click-through mode on Windows with keyboard shortcut
+- Click-through mode on Windows
+- Overlay toggle shortcut while click-through is active
 - Temporary drawing while click-through is enabled
 - Settings window
-- Persistent settings
+- Persistent canvas and overlay settings
+
+## How to Use
+
+1. Launch the app and drag on the canvas to draw.
+2. Use the top bar to change pen color and width.
+3. Toggle `Draw: On` if you want to temporarily pause editing.
+4. Open `Settings` to switch between white and transparent canvas modes and adjust overlay behavior.
+5. Enable `Always on top` when you want to keep the canvas above other windows.
+6. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
+
+## Shortcuts
+
+- `Ctrl+Z`: Undo the last stroke
+- `Ctrl+Shift+C`: Clear the canvas
+- `Ctrl+Delete`: Clear the canvas
+- `Ctrl+Shift+O`: Toggle overlay click-through mode while shortcut monitoring is available
+- `Shift` hold: Temporarily draw while click-through mode is active
+
+## Settings Overview
+
+- `Background`: Switch between a white canvas and a transparent canvas
+- `Opacity`: Adjust visible white tint when the canvas background is transparent
+- `Border`: Control when the transparent canvas border is shown
+- `Enable drawing`: Pause or resume mouse drawing
+- `Always on top`: Keep the window above other windows
+- `Borderless window`: Hide standard window decorations
+- `Transparent window background`: Blend the window chrome and panel background into the desktop
+- `Click-through mode`: Pass mouse input through the overlay when supported and safe to enable
+
+## Platform Notes
+
+- Windows currently has the most complete overlay workflow, including click-through mode and keyboard-driven return to drawing.
+- macOS includes the shared click-through controller path and shortcut monitoring implementation, but overlay behavior still needs real-world validation.
+- The project is intentionally keeping the feature set small until the base drawing and overlay interactions feel reliable.
+
+## Near-Term Focus
+
+- Eraser support
+- Conservative stroke smoothing or point filtering
+- Persistent default pen color and pen width
+- macOS overlay behavior validation
+- Export and save features after the drawing workflow is stable
 
 ## Tech Stack
 

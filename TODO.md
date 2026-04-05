@@ -2,133 +2,101 @@
 
 AetherInk is a lightweight overlay drawing tool for Windows and macOS.
 
+This file tracks the current implementation status and the next practical steps for the MVP.
+
 ---
 
-## Phase 1 — Core Drawing (MVP)
+## Current Status
 
-Basic drawing functionality.
+Implemented today:
 
-- [x] Create project structure
-- [x] Implement canvas drawing with mouse drag
-- [x] Draw black lines
-- [x] Clear canvas button
-
-Next improvements:
-
+- [x] Basic project structure
+- [x] Freehand drawing with mouse drag
+- [x] Stroke color selection
+- [x] Stroke width adjustment
 - [x] Undo last stroke
-- [x] Adjustable pen width
-- [x] Adjustable pen color
-- [ ] Eraser tool
-- [ ] Stroke smoothing
+- [x] Clear canvas
+- [x] Keyboard shortcuts for undo and clear
+- [x] Drawing enable / disable toggle
+- [x] White / transparent canvas background toggle
+- [x] Adjustable transparent canvas opacity
+- [x] Transparent canvas border visibility setting
+- [x] Always-on-top toggle
+- [x] Borderless window toggle
+- [x] Transparent window background toggle
+- [x] Settings window
+- [x] Persistent canvas and overlay settings
+
+Overlay workflow currently available:
+
+- [x] Click-through mode on Windows
+- [x] Overlay toggle shortcut while click-through is active
+- [x] Temporary drawing while holding `Shift`
+- [x] Shared click-through controller structure for Windows and macOS
+- [x] macOS shortcut monitoring implementation for overlay toggle and temporary drawing
 
 ---
 
-## Phase 2 — Canvas Features
+## Next Priorities
 
-Improve drawing usability.
+These are the most useful next steps based on the current codebase and project priorities.
 
-- [x] Transparent canvas background
-- [x] Toggle canvas background (white / transparent)
-- [x] Adjustable transparent background opacity
-- [x] Toggle drawing mode
-- [x] Keyboard shortcut for clear
-- [x] Keyboard shortcut for undo
-- [ ] Cursor indicator for pen
-
----
-
-## Phase 3 — Overlay Mode
-
-Core feature of AetherInk.
-
-- [x] Always-on-top window
-- [x] Borderless window mode
-- [x] Transparent window background
-- [x] Click-through mode (Windows MVP)
-- [x] Keyboard shortcut for click-through mode
-- [x] Temporary drawing while holding a key
-
-Example workflow:
-Normal mode → click-through
-Hold key → draw
-Release key → click-through
+- [ ] Add eraser support without destabilizing stroke behavior
+- [ ] Add conservative stroke smoothing or point filtering
+- [ ] Persist default pen color
+- [ ] Persist default pen width
+- [ ] Add a clearer active tool / cursor indicator
+- [ ] Improve pen selection UX beyond the basic color palette
 
 ---
 
-## Phase 4 — Platform Integration
+## Overlay Follow-up
 
-OS-specific behavior.
+The overlay foundation exists, but platform behavior still needs tightening.
 
-### Windows
-
-- [x] Window transparency
-- [x] Click-through window style
-- [x] Always-on-top control
-
-### macOS
-
-- [ ] Transparent window
-- [ ] Floating window level
-- [x] Click-through behavior
-- [x] Verify `ViewportCommand::MousePassthrough` behavior on macOS
-- [x] Add native shortcut monitoring for overlay toggle while click-through is active
-- [x] Add native shortcut monitoring for temporary drawing while click-through is active
-- [ ] Define fallback behavior when shortcut monitoring is unavailable
+- [ ] Verify macOS transparent window behavior in real usage
+- [ ] Verify macOS always-on-top / floating behavior in real usage
+- [ ] Validate macOS click-through workflow end-to-end
+- [ ] Define fallback behavior if global shortcut monitoring is unavailable
+- [ ] Review whether overlay status messaging should be visible outside the top bar
 
 ---
 
-## Phase 5 — Productivity Features
+## Productivity Features
 
-Useful tools for meetings and brainstorming.
+Useful after the core drawing workflow feels stable.
 
 - [ ] Screenshot annotation mode
-- [ ] Quick toggle overlay shortcut
+- [ ] Quick global shortcut to show or hide the overlay
 - [ ] Save drawing as PNG
-- [ ] Export strokes
+- [ ] Export stroke data
 
 ---
 
-## Phase 6 — UI Improvements
+## Performance and Stability
 
-Improve user experience.
+Keep changes incremental and measurable.
 
-- [ ] Minimal toolbar
-- [x] Settings window
-- [x] Persistent canvas background setting
-- [x] Persistent transparent background opacity setting
-- [ ] Persistent default pen color setting
-- [ ] Persistent default pen width setting
-- [ ] Pen selection
-- [x] Color palette
-- [x] Pen size slider
-- [x] Transparent canvas border visibility setting (always show / show near edges only)
+- [ ] Review stroke rendering cost as stroke count grows
+- [ ] Limit unnecessary point density during fast dragging
+- [ ] Add focused validation for drawing and overlay regressions
 
 ---
 
-## Phase 7 — Performance
-
-- [ ] Optimize stroke rendering
-- [ ] Limit point density
-- [ ] GPU rendering improvements
-
----
-
-## Phase 8 — Distribution
-
-Prepare for release.
+## Release Preparation
 
 - [ ] App icon
-- [ ] Windows build
-- [ ] macOS build
-- [ ] GitHub release
-- [ ] Documentation
+- [ ] Windows build validation
+- [ ] macOS build validation
+- [ ] README usage notes for overlay features
+- [ ] First packaged release
 
 ---
 
-## Future Ideas
+## Later Ideas
 
-- [ ] Screen recording annotation
 - [ ] Laser pointer mode
 - [ ] Shape tools
+- [ ] Screen recording annotation
 - [ ] Multi-layer drawing
 - [ ] Collaborative drawing
