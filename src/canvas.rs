@@ -7,6 +7,7 @@ const DEFAULT_WHITE_BACKGROUND: Color32 = Color32::from_rgb(248, 246, 240);
 const TRANSPARENT_CANVAS_BORDER: Color32 = Color32::from_gray(180);
 const CANVAS_BORDER_HOVER_THRESHOLD: f32 = 24.0;
 const DEFAULT_ERASER_RADIUS: f32 = 8.0;
+const ERASER_SAMPLING_STEP: f32 = 2.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CanvasBackground {
@@ -391,77 +392,86 @@ fn erase_from_stroke(
     }
 
     let mut remaining_strokes = Vec::new();
-    let mut current_points = Vec::new();
     let effective_radius = eraser_radius + stroke.width * 0.5;
+    let mut current_points = Vec::new();
 
     for segment in stroke.points.windows(2) {
-        let start = segment[0];
-        let end = segment[1];
-        let is_erased = segment_intersects_eraser_path(start, end, eraser_path, effective_radius);
+        let sampled_points = sample_segment_points(segment[0], segment[1], ERASER_SAMPLING_STEP);
 
-        if is_erased {
-            if current_points.len() >= 2 {
-                remaining_strokes.push(DrawStroke {
-                    points: current_points,
-                    color: stroke.color,
-                    width: stroke.width,
-                });
+        for point in sampled_points {
+            let is_erased = point_is_inside_eraser_path(point, eraser_path, effective_radius);
+
+            if is_erased {
+                finalize_stroke_fragment(
+                    &mut remaining_strokes,
+                    &mut current_points,
+                    stroke.color,
+                    stroke.width,
+                );
+            } else {
+                push_point_if_needed(&mut current_points, point);
             }
-
-            current_points = Vec::new();
-            continue;
         }
-
-        if current_points.last().copied() != Some(start) {
-            current_points.push(start);
-        }
-        current_points.push(end);
     }
 
-    if current_points.len() >= 2 {
-        remaining_strokes.push(DrawStroke {
-            points: current_points,
-            color: stroke.color,
-            width: stroke.width,
-        });
-    }
+    finalize_stroke_fragment(
+        &mut remaining_strokes,
+        &mut current_points,
+        stroke.color,
+        stroke.width,
+    );
 
     remaining_strokes
 }
 
-fn segment_intersects_eraser_path(
-    segment_start: egui::Pos2,
-    segment_end: egui::Pos2,
-    eraser_path: &[egui::Pos2],
-    radius: f32,
-) -> bool {
+fn sample_segment_points(start: egui::Pos2, end: egui::Pos2, step: f32) -> Vec<egui::Pos2> {
+    let distance = start.distance(end);
+
+    if distance <= step {
+        return vec![start, end];
+    }
+
+    let segment = end - start;
+    let sample_count = (distance / step).ceil() as usize;
+    let mut points = Vec::with_capacity(sample_count + 1);
+
+    for index in 0..=sample_count {
+        let t = index as f32 / sample_count as f32;
+        points.push(start + segment * t);
+    }
+
+    points
+}
+
+fn finalize_stroke_fragment(
+    remaining_strokes: &mut Vec<DrawStroke>,
+    current_points: &mut Vec<egui::Pos2>,
+    color: Color32,
+    width: f32,
+) {
+    if current_points.len() >= 2 {
+        remaining_strokes.push(DrawStroke {
+            points: std::mem::take(current_points),
+            color,
+            width,
+        });
+    } else {
+        current_points.clear();
+    }
+}
+
+fn point_is_inside_eraser_path(point: egui::Pos2, eraser_path: &[egui::Pos2], radius: f32) -> bool {
     if eraser_path.is_empty() {
         return false;
     }
 
     if eraser_path.len() == 1 {
-        return distance_point_to_segment(eraser_path[0], segment_start, segment_end) <= radius;
+        return point.distance(eraser_path[0]) <= radius;
     }
 
-    eraser_path.windows(2).any(|eraser_segment| {
-        segment_distance(
-            segment_start,
-            segment_end,
-            eraser_segment[0],
-            eraser_segment[1],
-        ) <= radius
-    })
-}
-
-fn segment_distance(a1: egui::Pos2, a2: egui::Pos2, b1: egui::Pos2, b2: egui::Pos2) -> f32 {
-    if segments_intersect(a1, a2, b1, b2) {
-        return 0.0;
-    }
-
-    distance_point_to_segment(a1, b1, b2)
-        .min(distance_point_to_segment(a2, b1, b2))
-        .min(distance_point_to_segment(b1, a1, a2))
-        .min(distance_point_to_segment(b2, a1, a2))
+    eraser_path
+        .windows(2)
+        .any(|eraser_segment| distance_point_to_segment(point, eraser_segment[0], eraser_segment[1]) <= radius)
 }
 
 fn distance_point_to_segment(point: egui::Pos2, start: egui::Pos2, end: egui::Pos2) -> f32 {
@@ -475,26 +485,6 @@ fn distance_point_to_segment(point: egui::Pos2, start: egui::Pos2, end: egui::Po
     let projection = ((point - start).dot(segment) / length_sq).clamp(0.0, 1.0);
     let nearest = start + segment * projection;
     point.distance(nearest)
-}
-
-fn segments_intersect(a1: egui::Pos2, a2: egui::Pos2, b1: egui::Pos2, b2: egui::Pos2) -> bool {
-    let a = a2 - a1;
-    let b = b2 - b1;
-    let start_offset = b1 - a1;
-    let denominator = cross(a, b);
-
-    if denominator.abs() <= f32::EPSILON {
-        return false;
-    }
-
-    let t = cross(start_offset, b) / denominator;
-    let u = cross(start_offset, a) / denominator;
-
-    (0.0..=1.0).contains(&t) && (0.0..=1.0).contains(&u)
-}
-
-fn cross(a: egui::Vec2, b: egui::Vec2) -> f32 {
-    a.x * b.y - a.y * b.x
 }
 
 fn is_near_canvas_edge(rect: egui::Rect, pointer_pos: egui::Pos2) -> bool {
