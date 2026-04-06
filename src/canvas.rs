@@ -43,6 +43,9 @@ pub struct CanvasSettings {
     pub background: CanvasBackground,
     pub transparent_background_opacity: f32,
     pub transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
+    pub default_pen_color: [u8; 4],
+    pub default_pen_width: f32,
+    pub eraser_radius: f32,
 }
 
 impl Default for CanvasSettings {
@@ -51,6 +54,9 @@ impl Default for CanvasSettings {
             background: CanvasBackground::White,
             transparent_background_opacity: 0.0,
             transparent_canvas_border_visibility: TransparentCanvasBorderVisibility::NearEdges,
+            default_pen_color: egui::Color32::BLACK.to_array(),
+            default_pen_width: 2.0,
+            eraser_radius: DEFAULT_ERASER_RADIUS,
         }
     }
 }
@@ -109,11 +115,23 @@ impl CanvasState {
     }
 
     pub fn apply_settings(&mut self, settings: CanvasSettings) {
+        self.current_color = egui::Color32::from_rgba_unmultiplied(
+            settings.default_pen_color[0],
+            settings.default_pen_color[1],
+            settings.default_pen_color[2],
+            settings.default_pen_color[3],
+        );
+        self.current_width = settings.default_pen_width;
+        self.eraser_radius = settings.eraser_radius;
         self.settings = settings;
     }
 
     pub fn settings(&self) -> CanvasSettings {
-        self.settings.clone()
+        let mut settings = self.settings.clone();
+        settings.default_pen_color = self.current_color.to_array();
+        settings.default_pen_width = self.current_width;
+        settings.eraser_radius = self.eraser_radius;
+        settings
     }
 
     pub fn has_strokes(&self) -> bool {
@@ -213,7 +231,7 @@ impl CanvasState {
         }
 
         if self.current_tool == Tool::Eraser {
-            draw_eraser_preview(&painter, &self.current_eraser_path, self.eraser_radius);
+            draw_eraser_preview(&painter, &self.current_eraser_path, response.hover_pos(), self.eraser_radius);
         }
 
         response
@@ -311,8 +329,20 @@ fn draw_stroke(painter: &egui::Painter, stroke: &DrawStroke) {
     }
 }
 
-fn draw_eraser_preview(painter: &egui::Painter, path: &[egui::Pos2], radius: f32) {
+fn draw_eraser_preview(
+    painter: &egui::Painter,
+    path: &[egui::Pos2],
+    hover_pos: Option<egui::Pos2>,
+    radius: f32,
+) {
     let preview_color = egui::Color32::from_rgba_unmultiplied(190, 56, 56, 140);
+
+    if path.is_empty() {
+        if let Some(pointer_pos) = hover_pos {
+            painter.circle_stroke(pointer_pos, radius, Stroke::new(1.0, preview_color));
+        }
+        return;
+    }
 
     for point in path {
         painter.circle_stroke(*point, radius, Stroke::new(1.0, preview_color));
