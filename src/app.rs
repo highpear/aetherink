@@ -10,6 +10,7 @@ use self::ui::{
 };
 use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
+use crate::stroke::Tool;
 
 const APP_SETTINGS_KEY: &str = "app_settings";
 
@@ -190,6 +191,26 @@ impl AetherInkApp {
     }
 
     fn show_pen_controls(&mut self, ui: &mut egui::Ui) {
+        ui.label("Tool:");
+
+        for tool in [Tool::Pen, Tool::Eraser] {
+            if ui
+                .selectable_label(self.canvas.current_tool() == tool, tool.label())
+                .clicked()
+            {
+                self.canvas.set_current_tool(tool);
+            }
+        }
+
+        ui.separator();
+
+        if self.canvas.current_tool() == Tool::Eraser {
+            ui.label("Size:");
+            ui.add(egui::Slider::new(self.canvas.eraser_radius_mut(), 2.0..=32.0));
+            ui.separator();
+            return;
+        }
+
         ui.label("Color:");
         ui.color_edit_button_srgba(self.canvas.current_color_mut());
         show_basic_pen_colors(ui, self.canvas.current_color_mut());
