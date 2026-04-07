@@ -47,7 +47,6 @@ Overlay workflow currently available:
 These are the most useful next steps based on the current codebase and project priorities.
 
 - [ ] Add conservative stroke smoothing or point filtering
-- [ ] Add a clearer active tool / cursor indicator
 - [ ] Improve pen selection UX beyond the basic color palette
 
 ---

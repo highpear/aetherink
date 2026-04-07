@@ -1,4 +1,4 @@
-use egui::{Color32, Response, Sense, Stroke, Ui};
+use egui::{Color32, CursorIcon, Response, Sense, Stroke, Ui};
 use serde::{Deserialize, Serialize};
 
 use crate::stroke::{DrawStroke, Tool};
@@ -8,6 +8,8 @@ const TRANSPARENT_CANVAS_BORDER: Color32 = Color32::from_gray(180);
 const CANVAS_BORDER_HOVER_THRESHOLD: f32 = 24.0;
 const DEFAULT_ERASER_RADIUS: f32 = 8.0;
 const ERASER_SAMPLING_STEP: f32 = 2.0;
+const PEN_CURSOR_MIN_RADIUS: f32 = 2.0;
+const DISABLED_CURSOR_SIZE: f32 = 7.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CanvasBackground {
@@ -205,6 +207,7 @@ impl CanvasState {
             Sense::hover()
         };
         let (response, painter) = ui.allocate_painter(available_size, sense);
+        let response = response.on_hover_cursor(CursorIcon::Crosshair);
 
         let rect = response.rect;
         painter.rect_filled(rect, 0.0, self.background_color());
@@ -231,9 +234,15 @@ impl CanvasState {
             draw_stroke(&painter, stroke);
         }
 
-        if self.current_tool == Tool::Eraser {
-            draw_eraser_preview(&painter, &self.current_eraser_path, response.hover_pos(), self.eraser_radius);
-        }
+        draw_cursor_indicator(
+            &painter,
+            &response,
+            self.current_tool,
+            drawing_enabled,
+            self.current_width,
+            &self.current_eraser_path,
+            self.eraser_radius,
+        );
 
         response
     }
@@ -355,6 +364,81 @@ fn draw_eraser_preview(
             Stroke::new(radius * 2.0, preview_color),
         );
     }
+
+    if let Some(last_point) = path.last() {
+        draw_crosshair(painter, *last_point, radius * 0.45, Stroke::new(1.0, preview_color));
+    }
+}
+
+fn draw_cursor_indicator(
+    painter: &egui::Painter,
+    response: &Response,
+    current_tool: Tool,
+    drawing_enabled: bool,
+    pen_width: f32,
+    eraser_path: &[egui::Pos2],
+    eraser_radius: f32,
+) {
+    if current_tool == Tool::Eraser {
+        draw_eraser_preview(painter, eraser_path, response.hover_pos(), eraser_radius);
+        return;
+    }
+
+    let Some(pointer_pos) = response.hover_pos() else {
+        return;
+    };
+
+    if !response.rect.contains(pointer_pos) {
+        return;
+    }
+
+    if drawing_enabled {
+        draw_pen_cursor(painter, pointer_pos, pen_width);
+    } else {
+        draw_disabled_cursor(painter, pointer_pos);
+    }
+}
+
+fn draw_pen_cursor(painter: &egui::Painter, pointer_pos: egui::Pos2, pen_width: f32) {
+    let radius = (pen_width * 0.5).max(PEN_CURSOR_MIN_RADIUS);
+    let outer_stroke = Stroke::new(1.5, Color32::WHITE);
+    let inner_stroke = Stroke::new(1.0, Color32::from_rgba_unmultiplied(24, 24, 24, 220));
+
+    painter.circle_stroke(pointer_pos, radius + 1.0, outer_stroke);
+    painter.circle_stroke(pointer_pos, radius, inner_stroke);
+    painter.circle_filled(pointer_pos, 1.2, Color32::from_rgba_unmultiplied(24, 24, 24, 220));
+}
+
+fn draw_disabled_cursor(painter: &egui::Painter, pointer_pos: egui::Pos2) {
+    let stroke = Stroke::new(1.5, Color32::from_rgba_unmultiplied(120, 120, 120, 220));
+    draw_crosshair(painter, pointer_pos, DISABLED_CURSOR_SIZE, stroke);
+    painter.circle_stroke(
+        pointer_pos,
+        DISABLED_CURSOR_SIZE + 2.0,
+        Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 200)),
+    );
+}
+
+fn draw_crosshair(
+    painter: &egui::Painter,
+    center: egui::Pos2,
+    radius: f32,
+    stroke: Stroke,
+) {
+    painter.line_segment(
+        [
+            center + egui::vec2(-radius, 0.0),
+            center + egui::vec2(radius, 0.0),
+        ],
+        stroke,
+    );
+    painter.line_segment(
+        [
+            center + egui::vec2(0.0, -radius),
+            center + egui::vec2(0.0, radius),
+        ],
+        stroke,
+    );
 }
 
 fn push_point_if_needed(points: &mut Vec<egui::Pos2>, pos: egui::Pos2) {
