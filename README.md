@@ -19,6 +19,7 @@ Drawing
 
 - Freehand drawing with mouse drag
 - Pen and eraser tools
+- Tool-specific canvas cursor feedback
 - Adjustable pen color
 - Adjustable pen width
 - Adjustable eraser size
@@ -83,7 +84,6 @@ Overlay workflow
 ## Near-Term Focus
 
 - Conservative stroke smoothing or point filtering
-- Clearer active tool and cursor feedback
 - Improved pen selection UX beyond the basic color palette
 - macOS overlay behavior validation
 - Export and save features after the drawing workflow is stable
