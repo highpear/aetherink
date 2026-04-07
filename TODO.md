@@ -8,15 +8,20 @@ This file tracks the current implementation status and the next practical steps 
 
 ## Current Status
 
-Implemented today:
+Drawing currently available:
 
 - [x] Basic project structure
 - [x] Freehand drawing with mouse drag
+- [x] Pen and eraser tools
 - [x] Stroke color selection
 - [x] Stroke width adjustment
+- [x] Eraser size adjustment
 - [x] Undo last stroke
 - [x] Clear canvas
 - [x] Keyboard shortcuts for undo and clear
+
+Canvas and window controls currently available:
+
 - [x] Drawing enable / disable toggle
 - [x] White / transparent canvas background toggle
 - [x] Adjustable transparent canvas opacity
@@ -41,10 +46,7 @@ Overlay workflow currently available:
 
 These are the most useful next steps based on the current codebase and project priorities.
 
-- [ ] Add eraser support without destabilizing stroke behavior
 - [ ] Add conservative stroke smoothing or point filtering
-- [ ] Persist default pen color
-- [ ] Persist default pen width
 - [ ] Add a clearer active tool / cursor indicator
 - [ ] Improve pen selection UX beyond the basic color palette
 
