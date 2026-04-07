@@ -15,34 +15,45 @@ AetherInk is currently an early MVP focused on stable freehand drawing and the f
 
 ## Current Features
 
+Drawing
+
 - Freehand drawing with mouse drag
-- Toggle drawing mode
+- Pen and eraser tools
 - Adjustable pen color
 - Adjustable pen width
+- Adjustable eraser size
 - Basic color palette
 - Undo last stroke
 - Clear canvas button
 - Keyboard shortcuts for undo and clear
+
+Canvas and window
+
+- Toggle drawing mode
 - White / transparent canvas background toggle
 - Adjustable transparent background opacity
 - Transparent canvas border visibility setting
 - Always-on-top window toggle
 - Borderless window toggle
 - Transparent window background toggle
+- Settings window
+- Persistent canvas and overlay settings
+
+Overlay workflow
+
 - Click-through mode on Windows
 - Overlay toggle shortcut while click-through is active
 - Temporary drawing while click-through is enabled
-- Settings window
-- Persistent canvas and overlay settings
 
 ## How to Use
 
 1. Launch the app and drag on the canvas to draw.
-2. Use the top bar to change pen color and width.
-3. Toggle `Draw: On` if you want to temporarily pause editing.
-4. Open `Settings` to switch between white and transparent canvas modes and adjust overlay behavior.
-5. Enable `Always on top` when you want to keep the canvas above other windows.
-6. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
+2. Use the top bar to switch between the pen and eraser tools.
+3. Adjust pen color, pen width, or eraser size from the top bar.
+4. Toggle the `Draw: On` / `Draw: Off` control if you want to pause or resume editing.
+5. Open `Settings` to switch between white and transparent canvas modes and adjust overlay behavior.
+6. Enable `Always on top` when you want to keep the canvas above other windows.
+7. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
 
 ## Shortcuts
 
@@ -71,9 +82,9 @@ AetherInk is currently an early MVP focused on stable freehand drawing and the f
 
 ## Near-Term Focus
 
-- Eraser support
 - Conservative stroke smoothing or point filtering
-- Persistent default pen color and pen width
+- Clearer active tool and cursor feedback
+- Improved pen selection UX beyond the basic color palette
 - macOS overlay behavior validation
 - Export and save features after the drawing workflow is stable
 
