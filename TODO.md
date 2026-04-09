@@ -54,6 +54,18 @@ These are the most useful next steps based on the current codebase and project p
 
 ---
 
+## Decisions To Make Soon
+
+These do not all require immediate implementation, but clarifying them early should reduce rework.
+
+- [ ] Define the scope of undo history for clear, erase, and future canvas actions
+- [ ] Decide how stroke smoothing should balance responsiveness and fidelity
+- [ ] Decide how overlay UI should appear in transparent mode
+- [ ] Define the interaction model while click-through mode is active
+- [ ] Decide how much platform-specific behavior should be normalized across Windows and macOS
+
+---
+
 ## Overlay Follow-up
 
 The overlay foundation exists, but platform behavior still needs tightening.
@@ -61,6 +73,8 @@ The overlay foundation exists, but platform behavior still needs tightening.
 - [x] Verify macOS transparent window behavior in real usage
 - [x] Verify macOS always-on-top / floating behavior in real usage
 - [x] Keep click-through disabled if reliable shortcut monitoring is unavailable
+- [ ] Investigate Windows transparent window edge / shadow visibility in real usage
+- [ ] Define fallback behavior if global shortcut monitoring is unavailable
 - [ ] Review whether overlay status messaging should be visible outside the top bar
 
 ## macOS Validation Checklist
