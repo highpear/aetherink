@@ -25,9 +25,8 @@ impl ClickThroughController {
     }
 
     pub fn poll_overlay_toggle_shortcut(&mut self) -> bool {
-        let is_pressed = is_control_pressed()
-            && is_shift_pressed()
-            && is_key_pressed(MACOS_KEY_CODE_O);
+        let is_pressed =
+            is_control_pressed() && is_shift_pressed() && is_key_pressed(MACOS_KEY_CODE_O);
         let was_pressed = self.overlay_toggle_shortcut_was_pressed;
 
         self.overlay_toggle_shortcut_was_pressed = is_pressed;

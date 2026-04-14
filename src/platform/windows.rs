@@ -1,6 +1,4 @@
-use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-    GetAsyncKeyState, VK_CONTROL, VK_SHIFT,
-};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_SHIFT};
 
 const OVERLAY_TOGGLE_SHORTCUT_KEY: i32 = 'O' as i32;
 const TEMPORARY_DRAWING_KEY: i32 = VK_SHIFT as i32;

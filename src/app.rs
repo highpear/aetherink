@@ -206,7 +206,10 @@ impl AetherInkApp {
 
         if self.canvas.current_tool() == Tool::Eraser {
             ui.label("Size:");
-            ui.add(egui::Slider::new(self.canvas.eraser_radius_mut(), 2.0..=32.0));
+            ui.add(egui::Slider::new(
+                self.canvas.eraser_radius_mut(),
+                2.0..=32.0,
+            ));
             ui.separator();
             return;
         }
