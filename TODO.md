@@ -46,7 +46,6 @@ Overlay workflow currently available:
 
 These are the most useful next steps based on the current codebase and project priorities.
 
-- [ ] Add conservative stroke smoothing or point filtering
 - [ ] Improve pen selection UX beyond the basic color palette
 
 ---
@@ -79,7 +78,6 @@ Useful after the core drawing workflow feels stable.
 Keep changes incremental and measurable.
 
 - [ ] Review stroke rendering cost as stroke count grows
-- [ ] Limit unnecessary point density during fast dragging
 - [ ] Add focused validation for drawing and overlay regressions
 
 ---

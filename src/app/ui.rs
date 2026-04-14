@@ -68,7 +68,10 @@ pub(crate) fn undo_button() -> egui::Button<'static> {
             .color(egui::Color32::from_rgb(34, 44, 66)),
     )
     .fill(egui::Color32::from_rgb(227, 236, 248))
-    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(127, 146, 179)))
+    .stroke(egui::Stroke::new(
+        1.0,
+        egui::Color32::from_rgb(127, 146, 179),
+    ))
     .corner_radius(6.0)
     .min_size(egui::vec2(62.0, 28.0))
 }

@@ -10,6 +10,10 @@ const DEFAULT_ERASER_RADIUS: f32 = 8.0;
 const ERASER_SAMPLING_STEP: f32 = 2.0;
 const PEN_CURSOR_MIN_RADIUS: f32 = 2.0;
 const DISABLED_CURSOR_SIZE: f32 = 7.0;
+const PEN_POINT_MIN_DISTANCE: f32 = 1.0;
+const PEN_POINT_DISTANCE_PER_WIDTH: f32 = 0.35;
+const PEN_POINT_MAX_DISTANCE: f32 = 4.0;
+const PEN_DIRECTION_ALIGNMENT_THRESHOLD: f32 = 0.96;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CanvasBackground {
@@ -310,7 +314,7 @@ impl CanvasState {
                 match self.current_tool {
                     Tool::Pen => {
                         if let Some(stroke) = &mut self.current_stroke {
-                            push_point_if_needed(&mut stroke.points, pos);
+                            push_pen_point_if_needed(&mut stroke.points, pos, stroke.width);
                         }
                     }
                     Tool::Eraser => {
@@ -366,7 +370,12 @@ fn draw_eraser_preview(
     }
 
     if let Some(last_point) = path.last() {
-        draw_crosshair(painter, *last_point, radius * 0.45, Stroke::new(1.0, preview_color));
+        draw_crosshair(
+            painter,
+            *last_point,
+            radius * 0.45,
+            Stroke::new(1.0, preview_color),
+        );
     }
 }
 
@@ -406,7 +415,11 @@ fn draw_pen_cursor(painter: &egui::Painter, pointer_pos: egui::Pos2, pen_width: 
 
     painter.circle_stroke(pointer_pos, radius + 1.0, outer_stroke);
     painter.circle_stroke(pointer_pos, radius, inner_stroke);
-    painter.circle_filled(pointer_pos, 1.2, Color32::from_rgba_unmultiplied(24, 24, 24, 220));
+    painter.circle_filled(
+        pointer_pos,
+        1.2,
+        Color32::from_rgba_unmultiplied(24, 24, 24, 220),
+    );
 }
 
 fn draw_disabled_cursor(painter: &egui::Painter, pointer_pos: egui::Pos2) {
@@ -419,12 +432,7 @@ fn draw_disabled_cursor(painter: &egui::Painter, pointer_pos: egui::Pos2) {
     );
 }
 
-fn draw_crosshair(
-    painter: &egui::Painter,
-    center: egui::Pos2,
-    radius: f32,
-    stroke: Stroke,
-) {
+fn draw_crosshair(painter: &egui::Painter, center: egui::Pos2, radius: f32, stroke: Stroke) {
     painter.line_segment(
         [
             center + egui::vec2(-radius, 0.0),
@@ -450,6 +458,60 @@ fn push_point_if_needed(points: &mut Vec<egui::Pos2>, pos: egui::Pos2) {
     if should_push {
         points.push(pos);
     }
+}
+
+fn push_pen_point_if_needed(points: &mut Vec<egui::Pos2>, pos: egui::Pos2, width: f32) {
+    let min_distance = pen_point_min_distance(width);
+
+    match points.len() {
+        0 => {
+            points.push(pos);
+        }
+        1 => {
+            if points[0].distance(pos) >= min_distance {
+                points.push(pos);
+            }
+        }
+        _ => {
+            let previous = points[points.len() - 2];
+            let last = points[points.len() - 1];
+
+            if should_replace_last_pen_point(previous, last, pos, min_distance) {
+                if let Some(last_point) = points.last_mut() {
+                    *last_point = pos;
+                }
+                return;
+            }
+
+            if last.distance(pos) >= min_distance {
+                points.push(pos);
+            }
+        }
+    }
+}
+
+fn pen_point_min_distance(width: f32) -> f32 {
+    (PEN_POINT_MIN_DISTANCE + width * PEN_POINT_DISTANCE_PER_WIDTH).min(PEN_POINT_MAX_DISTANCE)
+}
+
+fn should_replace_last_pen_point(
+    previous: egui::Pos2,
+    last: egui::Pos2,
+    pos: egui::Pos2,
+    min_distance: f32,
+) -> bool {
+    let incoming = last - previous;
+    let outgoing = pos - last;
+
+    if incoming.length_sq() <= f32::EPSILON || outgoing.length_sq() <= f32::EPSILON {
+        return false;
+    }
+
+    if outgoing.length() > min_distance * 1.5 {
+        return false;
+    }
+
+    incoming.normalized().dot(outgoing.normalized()) >= PEN_DIRECTION_ALIGNMENT_THRESHOLD
 }
 
 fn erase_from_strokes(
@@ -553,9 +615,9 @@ fn point_is_inside_eraser_path(point: egui::Pos2, eraser_path: &[egui::Pos2], ra
         return point.distance(eraser_path[0]) <= radius;
     }
 
-    eraser_path
-        .windows(2)
-        .any(|eraser_segment| distance_point_to_segment(point, eraser_segment[0], eraser_segment[1]) <= radius)
+    eraser_path.windows(2).any(|eraser_segment| {
+        distance_point_to_segment(point, eraser_segment[0], eraser_segment[1]) <= radius
+    })
 }
 
 fn distance_point_to_segment(point: egui::Pos2, start: egui::Pos2, end: egui::Pos2) -> f32 {
