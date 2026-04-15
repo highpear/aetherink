@@ -6,7 +6,8 @@ use eframe::egui;
 
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
-    clear_button, drawing_mode_label, keyboard_shortcut_pressed, show_basic_pen_colors, undo_button,
+    clear_button, drawing_mode_label, keyboard_shortcut_pressed, show_pen_color_presets,
+    show_pen_width_presets, undo_button,
 };
 use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
@@ -216,9 +217,10 @@ impl AetherInkApp {
 
         ui.label("Color:");
         ui.color_edit_button_srgba(self.canvas.current_color_mut());
-        show_basic_pen_colors(ui, self.canvas.current_color_mut());
+        show_pen_color_presets(ui, self.canvas.current_color_mut());
 
         ui.label("Width:");
+        show_pen_width_presets(ui, self.canvas.current_width_mut());
         ui.add(egui::Slider::new(
             self.canvas.current_width_mut(),
             1.0..=20.0,

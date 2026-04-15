@@ -46,7 +46,8 @@ Overlay workflow currently available:
 
 These are the most useful next steps based on the current codebase and project priorities.
 
-- [ ] Improve pen selection UX beyond the basic color palette
+- [ ] Validate macOS click-through workflow end-to-end
+- [ ] Verify macOS transparent window behavior in real usage
 
 ---
 
@@ -56,7 +57,6 @@ The overlay foundation exists, but platform behavior still needs tightening.
 
 - [ ] Verify macOS transparent window behavior in real usage
 - [ ] Verify macOS always-on-top / floating behavior in real usage
-- [ ] Validate macOS click-through workflow end-to-end
 - [ ] Define fallback behavior if global shortcut monitoring is unavailable
 - [ ] Review whether overlay status messaging should be visible outside the top bar
 
