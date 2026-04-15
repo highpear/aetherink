@@ -9,7 +9,7 @@ fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("AetherInk")
-            .with_inner_size([1000.0, 700.0])
+            .with_inner_size([1120.0, 760.0])
             .with_transparent(true),
         ..Default::default()
     };

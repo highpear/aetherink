@@ -1,12 +1,18 @@
 use eframe::egui;
 
-const BASIC_PEN_COLORS: [(&str, egui::Color32); 5] = [
+const PEN_PRESET_COLORS: [(&str, egui::Color32); 10] = [
     ("Black", egui::Color32::BLACK),
     ("White", egui::Color32::WHITE),
+    ("Gray", egui::Color32::from_rgb(107, 114, 128)),
     ("Red", egui::Color32::from_rgb(220, 38, 38)),
+    ("Orange", egui::Color32::from_rgb(234, 88, 12)),
     ("Yellow", egui::Color32::from_rgb(234, 179, 8)),
+    ("Green", egui::Color32::from_rgb(22, 163, 74)),
+    ("Cyan", egui::Color32::from_rgb(8, 145, 178)),
     ("Blue", egui::Color32::from_rgb(37, 99, 235)),
+    ("Violet", egui::Color32::from_rgb(124, 58, 237)),
 ];
+const PEN_WIDTH_PRESETS: [f32; 5] = [1.0, 2.0, 4.0, 8.0, 12.0];
 
 pub(crate) fn drawing_mode_label(drawing_enabled: bool) -> &'static str {
     if drawing_enabled {
@@ -34,9 +40,9 @@ pub(crate) fn keyboard_shortcut_pressed(
     })
 }
 
-pub(crate) fn show_basic_pen_colors(ui: &mut egui::Ui, current_color: &mut egui::Color32) {
+pub(crate) fn show_pen_color_presets(ui: &mut egui::Ui, current_color: &mut egui::Color32) {
     ui.horizontal(|ui| {
-        for (label, color) in BASIC_PEN_COLORS {
+        for (label, color) in PEN_PRESET_COLORS {
             let is_selected = *current_color == color;
             let stroke_color = if is_selected {
                 egui::Color32::from_rgb(30, 30, 30)
@@ -59,6 +65,33 @@ pub(crate) fn show_basic_pen_colors(ui: &mut egui::Ui, current_color: &mut egui:
             }
         }
     });
+}
+
+pub(crate) fn show_pen_width_presets(ui: &mut egui::Ui, current_width: &mut f32) {
+    ui.horizontal(|ui| {
+        for width in PEN_WIDTH_PRESETS {
+            let is_selected = (*current_width - width).abs() < f32::EPSILON;
+
+            if ui
+                .selectable_label(is_selected, width_preset_label(width))
+                .on_hover_text(format!("Set pen width to {}", width))
+                .clicked()
+            {
+                *current_width = width;
+            }
+        }
+    });
+}
+
+fn width_preset_label(width: f32) -> &'static str {
+    match width as i32 {
+        1 => "XS",
+        2 => "S",
+        4 => "M",
+        8 => "L",
+        12 => "XL",
+        _ => "?",
+    }
 }
 
 pub(crate) fn undo_button() -> egui::Button<'static> {
