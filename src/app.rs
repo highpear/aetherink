@@ -2,6 +2,8 @@ mod settings;
 mod settings_window;
 mod ui;
 
+use std::time::Duration;
+
 use eframe::egui;
 
 use self::settings::{AppSettings, OverlaySettings};
@@ -14,6 +16,7 @@ use crate::platform::ClickThroughController;
 use crate::stroke::Tool;
 
 const APP_SETTINGS_KEY: &str = "app_settings";
+const CLICK_THROUGH_POLL_INTERVAL: Duration = Duration::from_millis(16);
 
 #[derive(Debug, Default)]
 pub struct AetherInkApp {
@@ -53,7 +56,7 @@ impl eframe::App for AetherInkApp {
                 self.canvas.ui(ui, self.overlay.drawing_enabled);
             });
 
-        ctx.request_repaint();
+        self.schedule_repaint(ctx);
     }
 
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
@@ -334,6 +337,12 @@ impl AetherInkApp {
             egui::Color32::TRANSPARENT
         } else {
             self.canvas.background_color()
+        }
+    }
+
+    fn schedule_repaint(&self, ctx: &egui::Context) {
+        if self.overlay.click_through_mode {
+            ctx.request_repaint_after(CLICK_THROUGH_POLL_INTERVAL);
         }
     }
 }
