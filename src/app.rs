@@ -69,10 +69,10 @@ impl AetherInkApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut app = Self::default();
 
-        if let Some(storage) = cc.storage {
-            if let Some(settings) = eframe::get_value(storage, APP_SETTINGS_KEY) {
-                app.apply_settings(settings);
-            }
+        if let Some(storage) = cc.storage
+            && let Some(settings) = eframe::get_value(storage, APP_SETTINGS_KEY)
+        {
+            app.apply_settings(settings);
         }
 
         app.apply_always_on_top(&cc.egui_ctx);

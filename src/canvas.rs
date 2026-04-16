@@ -256,11 +256,11 @@ impl CanvasState {
     }
 
     fn finish_current_stroke(&mut self) {
-        if let Some(stroke) = self.current_stroke.take() {
-            if stroke.is_meaningful() {
-                self.push_history_snapshot();
-                self.strokes.push(stroke);
-            }
+        if let Some(stroke) = self.current_stroke.take()
+            && stroke.is_meaningful()
+        {
+            self.push_history_snapshot();
+            self.strokes.push(stroke);
         }
 
         if !self.current_eraser_path.is_empty() {
@@ -293,33 +293,33 @@ impl CanvasState {
     }
 
     fn handle_pointer_input(&mut self, response: &Response) {
-        if response.drag_started() {
-            if let Some(pos) = response.interact_pointer_pos() {
-                match self.current_tool {
-                    Tool::Pen => {
-                        let mut stroke = DrawStroke::new(self.current_color, self.current_width);
-                        stroke.points.push(pos);
-                        self.current_stroke = Some(stroke);
-                    }
-                    Tool::Eraser => {
-                        self.current_eraser_path.clear();
-                        self.current_eraser_path.push(pos);
-                    }
+        if response.drag_started()
+            && let Some(pos) = response.interact_pointer_pos()
+        {
+            match self.current_tool {
+                Tool::Pen => {
+                    let mut stroke = DrawStroke::new(self.current_color, self.current_width);
+                    stroke.points.push(pos);
+                    self.current_stroke = Some(stroke);
+                }
+                Tool::Eraser => {
+                    self.current_eraser_path.clear();
+                    self.current_eraser_path.push(pos);
                 }
             }
         }
 
-        if response.dragged() {
-            if let Some(pos) = response.interact_pointer_pos() {
-                match self.current_tool {
-                    Tool::Pen => {
-                        if let Some(stroke) = &mut self.current_stroke {
-                            push_pen_point_if_needed(&mut stroke.points, pos, stroke.width);
-                        }
+        if response.dragged()
+            && let Some(pos) = response.interact_pointer_pos()
+        {
+            match self.current_tool {
+                Tool::Pen => {
+                    if let Some(stroke) = &mut self.current_stroke {
+                        push_pen_point_if_needed(&mut stroke.points, pos, stroke.width);
                     }
-                    Tool::Eraser => {
-                        push_point_if_needed(&mut self.current_eraser_path, pos);
-                    }
+                }
+                Tool::Eraser => {
+                    push_point_if_needed(&mut self.current_eraser_path, pos);
                 }
             }
         }
