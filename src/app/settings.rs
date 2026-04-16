@@ -23,18 +23,9 @@ impl Default for OverlaySettings {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub(crate) struct AppSettings {
     pub(crate) canvas: CanvasSettings,
     pub(crate) overlay: OverlaySettings,
-}
-
-impl Default for AppSettings {
-    fn default() -> Self {
-        Self {
-            canvas: CanvasSettings::default(),
-            overlay: OverlaySettings::default(),
-        }
-    }
 }
