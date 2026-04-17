@@ -45,6 +45,7 @@ Overlay workflow
 - Click-through mode on Windows
 - Overlay toggle shortcut while click-through is active
 - Temporary drawing while click-through is enabled
+- Click-through remains disabled on platforms where reliable shortcut monitoring is unavailable
 
 ## How to Use
 
@@ -78,7 +79,8 @@ Overlay workflow
 ## Platform Notes
 
 - Windows currently has the most complete overlay workflow, including click-through mode and keyboard-driven return to drawing.
-- macOS includes the shared click-through controller path and shortcut monitoring implementation, but overlay behavior still needs real-world validation.
+- macOS click-through, temporary drawing, transparent window behavior, and persistence have been validated in real use.
+- Click-through is intentionally kept disabled on platforms where shortcut monitoring is unavailable, because the app must always provide a reliable way to return from pointer passthrough.
 - The project is intentionally keeping the feature set small until the base drawing and overlay interactions feel reliable.
 
 ## Near-Term Focus

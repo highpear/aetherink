@@ -39,6 +39,7 @@ Overlay workflow currently available:
 - [x] Temporary drawing while holding `Shift`
 - [x] Shared click-through controller structure for Windows and macOS
 - [x] macOS shortcut monitoring implementation for overlay toggle and temporary drawing
+- [x] Click-through remains disabled when reliable shortcut monitoring is unavailable
 
 ---
 
@@ -57,7 +58,7 @@ The overlay foundation exists, but platform behavior still needs tightening.
 
 - [x] Verify macOS transparent window behavior in real usage
 - [x] Verify macOS always-on-top / floating behavior in real usage
-- [ ] Define fallback behavior if global shortcut monitoring is unavailable
+- [x] Keep click-through disabled if reliable shortcut monitoring is unavailable
 - [ ] Review whether overlay status messaging should be visible outside the top bar
 
 ## macOS Validation Checklist
