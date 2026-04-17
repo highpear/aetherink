@@ -46,8 +46,8 @@ Overlay workflow currently available:
 
 These are the most useful next steps based on the current codebase and project priorities.
 
-- [ ] Validate macOS click-through workflow end-to-end
-- [ ] Verify macOS transparent window behavior in real usage
+- [x] Validate macOS click-through workflow end-to-end
+- [x] Verify macOS transparent window behavior in real usage
 
 ---
 
@@ -55,8 +55,8 @@ These are the most useful next steps based on the current codebase and project p
 
 The overlay foundation exists, but platform behavior still needs tightening.
 
-- [ ] Verify macOS transparent window behavior in real usage
-- [ ] Verify macOS always-on-top / floating behavior in real usage
+- [x] Verify macOS transparent window behavior in real usage
+- [x] Verify macOS always-on-top / floating behavior in real usage
 - [ ] Define fallback behavior if global shortcut monitoring is unavailable
 - [ ] Review whether overlay status messaging should be visible outside the top bar
 
@@ -85,17 +85,17 @@ Run these checks in order when validating the current overlay workflow on macOS.
 
 ### 4. Click-Through Overlay
 
-- [ ] Click-through mode can be enabled from settings while not actively drawing
-- [ ] Click-through mode actually passes pointer input through to the app behind the overlay
-- [ ] `Shift` temporarily restores drawing while click-through mode is active
-- [ ] Releasing `Shift` reliably returns the app to click-through mode
-- [ ] `Ctrl+Shift+O` toggles overlay click-through mode on and off without getting stuck
-- [ ] Overlay status text matches the actual current interaction mode
-- [ ] Focus returns correctly after leaving click-through mode
+- [x] Click-through mode can be enabled from settings while not actively drawing
+- [x] Click-through mode actually passes pointer input through to the app behind the overlay
+- [x] `Shift` temporarily restores drawing while click-through mode is active
+- [x] Releasing `Shift` reliably returns the app to click-through mode
+- [x] `Ctrl+Shift+O` toggles overlay click-through mode on and off without getting stuck
+- [x] Overlay status text matches the actual current interaction mode
+- [x] Focus returns correctly after leaving click-through mode
 
 ### 5. Restart / Persistence
 
-- [ ] Persisted overlay settings restore correctly after restarting the app on macOS
+- [x] Persisted overlay settings restore correctly after restarting the app on macOS
 
 ---
 
