@@ -60,6 +60,43 @@ The overlay foundation exists, but platform behavior still needs tightening.
 - [ ] Define fallback behavior if global shortcut monitoring is unavailable
 - [ ] Review whether overlay status messaging should be visible outside the top bar
 
+## macOS Validation Checklist
+
+Run these checks in order when validating the current overlay workflow on macOS.
+
+### 1. Basic Drawing
+
+- [x] Basic drawing works with mouse drag in white canvas mode
+- [x] Pen, eraser, undo, and clear actions behave as expected
+- [x] Basic drawing also works in transparent canvas mode
+
+### 2. Transparent Canvas
+
+- [x] Transparent canvas opacity changes are reflected immediately
+- [x] Transparent canvas border visibility modes remain understandable on transparent backgrounds
+- [x] Transparent window background makes the app window visually blend without corrupting stroke rendering
+- [x] Transparent window background does not make the top bar unreadable
+
+### 3. Window Behavior
+
+- [x] Always-on-top keeps the window above normal app windows during practical use
+- [x] Borderless window still allows reliable window dragging from the top bar
+- [x] No obvious macOS-specific issues appear across multiple desktops or fullscreen app transitions
+
+### 4. Click-Through Overlay
+
+- [ ] Click-through mode can be enabled from settings while not actively drawing
+- [ ] Click-through mode actually passes pointer input through to the app behind the overlay
+- [ ] `Shift` temporarily restores drawing while click-through mode is active
+- [ ] Releasing `Shift` reliably returns the app to click-through mode
+- [ ] `Ctrl+Shift+O` toggles overlay click-through mode on and off without getting stuck
+- [ ] Overlay status text matches the actual current interaction mode
+- [ ] Focus returns correctly after leaving click-through mode
+
+### 5. Restart / Persistence
+
+- [ ] Persisted overlay settings restore correctly after restarting the app on macOS
+
 ---
 
 ## Productivity Features
