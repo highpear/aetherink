@@ -17,6 +17,7 @@ Drawing currently available:
 - [x] Stroke width adjustment
 - [x] Eraser size adjustment
 - [x] Undo last stroke
+- [x] Redo last undone change
 - [x] Clear canvas
 - [x] Keyboard shortcuts for undo and clear
 

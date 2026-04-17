@@ -8,8 +8,8 @@ use eframe::egui;
 
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
-    clear_button, drawing_mode_label, keyboard_shortcut_pressed, show_pen_color_presets,
-    show_pen_width_presets, undo_button,
+    clear_button, drawing_mode_label, keyboard_shortcut_pressed, redo_button,
+    show_pen_color_presets, show_pen_width_presets, undo_button,
 };
 use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
@@ -33,6 +33,12 @@ impl eframe::App for AetherInkApp {
 
         if keyboard_shortcut_pressed(ctx, egui::Key::Z, false) {
             self.canvas.undo();
+        }
+
+        if keyboard_shortcut_pressed(ctx, egui::Key::Z, true)
+            || keyboard_shortcut_pressed(ctx, egui::Key::Y, false)
+        {
+            self.canvas.redo();
         }
 
         if keyboard_shortcut_pressed(ctx, egui::Key::C, true)
@@ -247,14 +253,24 @@ impl AetherInkApp {
     }
 
     fn show_canvas_actions(&mut self, ui: &mut egui::Ui) {
+        let can_undo = self.canvas.can_undo();
+        let can_redo = self.canvas.can_redo();
         let has_strokes = self.canvas.has_strokes();
 
         if ui
-            .add_enabled(has_strokes, undo_button())
+            .add_enabled(can_undo, undo_button())
             .on_hover_text("Remove the last stroke (Ctrl+Z)")
             .clicked()
         {
             self.canvas.undo();
+        }
+
+        if ui
+            .add_enabled(can_redo, redo_button())
+            .on_hover_text("Restore the last undone change (Ctrl+Shift+Z or Ctrl+Y)")
+            .clicked()
+        {
+            self.canvas.redo();
         }
 
         if ui
