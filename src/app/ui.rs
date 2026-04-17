@@ -109,6 +109,21 @@ pub(crate) fn undo_button() -> egui::Button<'static> {
     .min_size(egui::vec2(62.0, 28.0))
 }
 
+pub(crate) fn redo_button() -> egui::Button<'static> {
+    egui::Button::new(
+        egui::RichText::new("Redo")
+            .strong()
+            .color(egui::Color32::from_rgb(34, 44, 66)),
+    )
+    .fill(egui::Color32::from_rgb(227, 236, 248))
+    .stroke(egui::Stroke::new(
+        1.0,
+        egui::Color32::from_rgb(127, 146, 179),
+    ))
+    .corner_radius(6.0)
+    .min_size(egui::vec2(62.0, 28.0))
+}
+
 pub(crate) fn clear_button() -> egui::Button<'static> {
     egui::Button::new(
         egui::RichText::new("Clear")

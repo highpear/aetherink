@@ -72,6 +72,7 @@ impl Default for CanvasSettings {
 pub struct CanvasState {
     strokes: Vec<DrawStroke>,
     history: Vec<Vec<DrawStroke>>,
+    redo_history: Vec<Vec<DrawStroke>>,
     current_stroke: Option<DrawStroke>,
     current_eraser_path: Vec<egui::Pos2>,
     current_color: Color32,
@@ -86,6 +87,7 @@ impl Default for CanvasState {
         Self {
             strokes: Vec::new(),
             history: Vec::new(),
+            redo_history: Vec::new(),
             current_stroke: None,
             current_eraser_path: Vec::new(),
             current_color: Color32::BLACK,
@@ -145,6 +147,14 @@ impl CanvasState {
         !self.strokes.is_empty()
     }
 
+    pub fn can_undo(&self) -> bool {
+        !self.history.is_empty()
+    }
+
+    pub fn can_redo(&self) -> bool {
+        !self.redo_history.is_empty()
+    }
+
     pub fn is_drawing(&self) -> bool {
         self.current_stroke.is_some()
     }
@@ -199,7 +209,17 @@ impl CanvasState {
         self.stop_drawing();
 
         if let Some(previous_strokes) = self.history.pop() {
+            self.redo_history.push(self.strokes.clone());
             self.strokes = previous_strokes;
+        }
+    }
+
+    pub fn redo(&mut self) {
+        self.stop_drawing();
+
+        if let Some(next_strokes) = self.redo_history.pop() {
+            self.history.push(self.strokes.clone());
+            self.strokes = next_strokes;
         }
     }
 
@@ -331,6 +351,7 @@ impl CanvasState {
 
     fn push_history_snapshot(&mut self) {
         self.history.push(self.strokes.clone());
+        self.redo_history.clear();
     }
 }
 
