@@ -21,12 +21,24 @@ use crate::stroke::Tool;
 const APP_SETTINGS_KEY: &str = "app_settings";
 const CLICK_THROUGH_POLL_INTERVAL: Duration = Duration::from_millis(16);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ExportStatusKind {
+    Success,
+    Error,
+}
+
+#[derive(Debug, Clone)]
+struct ExportStatus {
+    kind: ExportStatusKind,
+    message: String,
+}
+
 #[derive(Debug, Default)]
 pub struct AetherInkApp {
     canvas: CanvasState,
     overlay: OverlaySettings,
     is_settings_window_open: bool,
-    export_status_message: Option<String>,
+    export_status: Option<ExportStatus>,
     temporary_drawing_active: bool,
     click_through_controller: ClickThroughController,
 }
@@ -287,14 +299,24 @@ impl AetherInkApp {
         }
 
         if ui
-            .add(save_png_button())
-            .on_hover_text("Choose where to save the current canvas as a PNG file")
+            .add_enabled(has_strokes, save_png_button())
+            .on_hover_text(if has_strokes {
+                "Choose where to save the current canvas as a PNG file"
+            } else {
+                "Draw something on the canvas before saving a PNG"
+            })
             .clicked()
         {
-            self.export_status_message = match self.save_canvas_png() {
-                Ok(Some(path)) => Some(format!("Saved PNG: {}", path.display())),
-                Ok(None) => self.export_status_message.take(),
-                Err(error) => Some(error),
+            self.export_status = match self.save_canvas_png() {
+                Ok(Some(path)) => Some(ExportStatus {
+                    kind: ExportStatusKind::Success,
+                    message: format!("Saved PNG: {}", path.display()),
+                }),
+                Ok(None) => self.export_status.take(),
+                Err(error) => Some(ExportStatus {
+                    kind: ExportStatusKind::Error,
+                    message: error,
+                }),
             };
         }
 
@@ -336,12 +358,16 @@ impl AetherInkApp {
     }
 
     fn show_export_status(&self, ui: &mut egui::Ui) {
-        let Some(message) = &self.export_status_message else {
+        let Some(status) = &self.export_status else {
             return;
         };
 
         ui.separator();
-        ui.label(message);
+        let color = match status.kind {
+            ExportStatusKind::Success => egui::Color32::from_rgb(36, 94, 62),
+            ExportStatusKind::Error => egui::Color32::from_rgb(165, 36, 36),
+        };
+        ui.label(egui::RichText::new(&status.message).color(color));
     }
 
     fn show_settings_button(&mut self, ui: &mut egui::Ui) {
