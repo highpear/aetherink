@@ -66,6 +66,10 @@ impl eframe::App for AetherInkApp {
             self.canvas.clear();
         }
 
+        if self.canvas.has_strokes() && keyboard_shortcut_pressed(ctx, egui::Key::S, false) {
+            self.start_png_export();
+        }
+
         self.show_top_bar(ctx);
         self.show_settings_window(ctx);
 
@@ -304,25 +308,13 @@ impl AetherInkApp {
         if ui
             .add_enabled(has_strokes, save_png_button())
             .on_hover_text(if has_strokes {
-                "Choose where to save the current canvas as a PNG file"
+                "Choose where to save the current canvas as a PNG file (Ctrl/Cmd+S)"
             } else {
                 "Draw something on the canvas before saving a PNG"
             })
             .clicked()
         {
-            self.export_status = match self.save_canvas_png() {
-                Ok(Some(path)) => Some(ExportStatus {
-                    kind: ExportStatusKind::Success,
-                    message: format!("Saved PNG: {}", path.display()),
-                    visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
-                }),
-                Ok(None) => self.export_status.take(),
-                Err(error) => Some(ExportStatus {
-                    kind: ExportStatusKind::Error,
-                    message: error,
-                    visible_until: Instant::now() + ERROR_TOAST_DURATION,
-                }),
-            };
+            self.start_png_export();
         }
 
         ui.separator();
@@ -466,6 +458,22 @@ impl AetherInkApp {
         self.canvas.export_png(&path)?;
 
         Ok(Some(path))
+    }
+
+    fn start_png_export(&mut self) {
+        self.export_status = match self.save_canvas_png() {
+            Ok(Some(path)) => Some(ExportStatus {
+                kind: ExportStatusKind::Success,
+                message: format!("Saved PNG: {}", path.display()),
+                visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
+            }),
+            Ok(None) => self.export_status.take(),
+            Err(error) => Some(ExportStatus {
+                kind: ExportStatusKind::Error,
+                message: error,
+                visible_until: Instant::now() + ERROR_TOAST_DURATION,
+            }),
+        };
     }
 }
 
