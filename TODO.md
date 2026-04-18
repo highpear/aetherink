@@ -19,6 +19,7 @@ Drawing currently available:
 - [x] Undo last stroke
 - [x] Redo last undone change
 - [x] Clear canvas
+- [x] Save drawing as PNG
 - [x] Keyboard shortcuts for undo and clear
 
 Canvas and window controls currently available:
@@ -107,7 +108,6 @@ Useful after the core drawing workflow feels stable.
 
 - [ ] Screenshot annotation mode
 - [ ] Quick global shortcut to show or hide the overlay
-- [ ] Save drawing as PNG
 - [ ] Export stroke data
 
 ---

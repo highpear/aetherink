@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 eframe = { version = "0.33", features = ["persistence"] }
 egui = "0.33"
+image = { version = "0.25", default-features = false, features = ["png"] }
 serde = { version = "1", features = ["derive"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
