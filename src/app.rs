@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use chrono::Local;
 use eframe::egui;
+use rfd::FileDialog;
 
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
@@ -287,13 +288,14 @@ impl AetherInkApp {
 
         if ui
             .add(save_png_button())
-            .on_hover_text("Save the current canvas as a PNG file in the project folder")
+            .on_hover_text("Choose where to save the current canvas as a PNG file")
             .clicked()
         {
-            self.export_status_message = Some(match self.save_canvas_png() {
-                Ok(path) => format!("Saved PNG: {}", path.display()),
-                Err(error) => error,
-            });
+            self.export_status_message = match self.save_canvas_png() {
+                Ok(Some(path)) => Some(format!("Saved PNG: {}", path.display())),
+                Ok(None) => self.export_status_message.take(),
+                Err(error) => Some(error),
+            };
         }
 
         ui.separator();
@@ -386,16 +388,20 @@ impl AetherInkApp {
         }
     }
 
-    fn save_canvas_png(&mut self) -> Result<PathBuf, String> {
+    fn save_canvas_png(&mut self) -> Result<Option<PathBuf>, String> {
         self.canvas.stop_drawing();
 
-        let current_directory = std::env::current_dir()
-            .map_err(|error| format!("Failed to resolve the current directory: {error}"))?;
-        let path = current_directory.join(export_file_name());
+        let Some(path) = FileDialog::new()
+            .add_filter("PNG image", &["png"])
+            .set_file_name(&export_file_name())
+            .save_file()
+        else {
+            return Ok(None);
+        };
 
         self.canvas.export_png(&path)?;
 
-        Ok(path)
+        Ok(Some(path))
     }
 }
 
