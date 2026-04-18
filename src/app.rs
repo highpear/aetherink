@@ -2,7 +2,7 @@ mod settings;
 mod settings_window;
 mod ui;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use chrono::Local;
@@ -461,6 +461,7 @@ impl AetherInkApp {
         else {
             return Ok(None);
         };
+        let path = ensure_png_extension(&path);
 
         self.canvas.export_png(&path)?;
 
@@ -472,4 +473,17 @@ fn export_file_name() -> String {
     let timestamp = Local::now();
 
     format!("aetherink-canvas-{}.png", timestamp.format("%Y%m%d-%H%M%S"))
+}
+
+fn ensure_png_extension(path: &Path) -> PathBuf {
+    let has_png_extension = path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("png"));
+
+    if has_png_extension {
+        path.to_path_buf()
+    } else {
+        path.with_extension("png")
+    }
 }

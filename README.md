@@ -85,6 +85,7 @@ Overlay workflow
 - `Save PNG` exports the current canvas area only, without the top bar or cursor preview.
 - The PNG background follows the current canvas background setting, including transparent canvas opacity.
 - The save dialog suggests a timestamped name such as `aetherink-canvas-20260418-173015.png`.
+- If you omit the file extension when saving, AetherInk automatically appends `.png`.
 
 ## Platform Notes
 
