@@ -3,7 +3,7 @@ mod settings_window;
 mod ui;
 
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use chrono::Local;
 use eframe::egui;
@@ -20,6 +20,8 @@ use crate::stroke::Tool;
 
 const APP_SETTINGS_KEY: &str = "app_settings";
 const CLICK_THROUGH_POLL_INTERVAL: Duration = Duration::from_millis(16);
+const SUCCESS_TOAST_DURATION: Duration = Duration::from_secs(3);
+const ERROR_TOAST_DURATION: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ExportStatusKind {
@@ -31,6 +33,7 @@ enum ExportStatusKind {
 struct ExportStatus {
     kind: ExportStatusKind,
     message: String,
+    visible_until: Instant,
 }
 
 #[derive(Debug, Default)]
@@ -78,6 +81,7 @@ impl eframe::App for AetherInkApp {
                 self.canvas.ui(ui, self.overlay.drawing_enabled);
             });
 
+        self.show_export_toast(ctx);
         self.schedule_repaint(ctx);
     }
 
@@ -193,7 +197,6 @@ impl AetherInkApp {
             self.show_drawing_mode_toggle(ui);
             self.show_canvas_actions(ui);
             self.show_always_on_top_toggle(ui, ctx);
-            self.show_export_status(ui);
             self.show_overlay_status(ui);
             self.show_settings_button(ui);
         });
@@ -311,11 +314,13 @@ impl AetherInkApp {
                 Ok(Some(path)) => Some(ExportStatus {
                     kind: ExportStatusKind::Success,
                     message: format!("Saved PNG: {}", path.display()),
+                    visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
                 }),
                 Ok(None) => self.export_status.take(),
                 Err(error) => Some(ExportStatus {
                     kind: ExportStatusKind::Error,
                     message: error,
+                    visible_until: Instant::now() + ERROR_TOAST_DURATION,
                 }),
             };
         }
@@ -357,17 +362,42 @@ impl AetherInkApp {
         ui.label(click_through_status);
     }
 
-    fn show_export_status(&self, ui: &mut egui::Ui) {
+    fn show_export_toast(&mut self, ctx: &egui::Context) {
         let Some(status) = &self.export_status else {
             return;
         };
 
-        ui.separator();
-        let color = match status.kind {
-            ExportStatusKind::Success => egui::Color32::from_rgb(36, 94, 62),
-            ExportStatusKind::Error => egui::Color32::from_rgb(165, 36, 36),
+        if Instant::now() >= status.visible_until {
+            self.export_status = None;
+            return;
+        }
+
+        let (fill_color, stroke_color, text_color) = match status.kind {
+            ExportStatusKind::Success => (
+                egui::Color32::from_rgba_unmultiplied(230, 247, 236, 244),
+                egui::Color32::from_rgb(86, 162, 118),
+                egui::Color32::from_rgb(36, 94, 62),
+            ),
+            ExportStatusKind::Error => (
+                egui::Color32::from_rgba_unmultiplied(252, 232, 232, 244),
+                egui::Color32::from_rgb(220, 68, 68),
+                egui::Color32::from_rgb(165, 36, 36),
+            ),
         };
-        ui.label(egui::RichText::new(&status.message).color(color));
+
+        egui::Area::new("export_toast".into())
+            .anchor(egui::Align2::RIGHT_BOTTOM, egui::vec2(-16.0, -16.0))
+            .interactable(false)
+            .show(ctx, |ui| {
+                egui::Frame::new()
+                    .fill(fill_color)
+                    .stroke(egui::Stroke::new(1.0, stroke_color))
+                    .corner_radius(10.0)
+                    .inner_margin(egui::Margin::symmetric(12, 10))
+                    .show(ui, |ui| {
+                        ui.label(egui::RichText::new(&status.message).color(text_color));
+                    });
+            });
     }
 
     fn show_settings_button(&mut self, ui: &mut egui::Ui) {
@@ -411,6 +441,13 @@ impl AetherInkApp {
     fn schedule_repaint(&self, ctx: &egui::Context) {
         if self.overlay.click_through_mode {
             ctx.request_repaint_after(CLICK_THROUGH_POLL_INTERVAL);
+        }
+
+        if let Some(status) = &self.export_status {
+            let remaining = status
+                .visible_until
+                .saturating_duration_since(Instant::now());
+            ctx.request_repaint_after(remaining.min(CLICK_THROUGH_POLL_INTERVAL));
         }
     }
 
