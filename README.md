@@ -57,7 +57,7 @@ Overlay workflow
 4. Toggle the `Draw: On` / `Draw: Off` control if you want to pause or resume editing.
 5. Open `Settings` to switch between white and transparent canvas modes and adjust overlay behavior.
 6. Enable `Always on top` when you want to keep the canvas above other windows.
-7. Use `Save PNG` to export the current canvas to a PNG file in the project folder.
+7. Use `Save PNG` to choose where to export the current canvas as a PNG file.
 8. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
 
 ## Shortcuts
@@ -84,7 +84,7 @@ Overlay workflow
 
 - `Save PNG` exports the current canvas area only, without the top bar or cursor preview.
 - The PNG background follows the current canvas background setting, including transparent canvas opacity.
-- Exported files are written to the current project directory with a timestamped name such as `aetherink-canvas-20260418-173015.png`.
+- The save dialog suggests a timestamped name such as `aetherink-canvas-20260418-173015.png`.
 
 ## Platform Notes
 
