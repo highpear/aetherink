@@ -3,8 +3,9 @@ mod settings_window;
 mod ui;
 
 use std::path::PathBuf;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
+use chrono::Local;
 use eframe::egui;
 
 use self::settings::{AppSettings, OverlaySettings};
@@ -399,10 +400,7 @@ impl AetherInkApp {
 }
 
 fn export_file_name() -> String {
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
+    let timestamp = Local::now();
 
-    format!("aetherink-canvas-{timestamp}.png")
+    format!("aetherink-canvas-{}.png", timestamp.format("%Y%m%d-%H%M%S"))
 }

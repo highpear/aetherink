@@ -84,7 +84,7 @@ Overlay workflow
 
 - `Save PNG` exports the current canvas area only, without the top bar or cursor preview.
 - The PNG background follows the current canvas background setting, including transparent canvas opacity.
-- Exported files are written to the current project directory with a timestamped name such as `aetherink-canvas-1713436800.png`.
+- Exported files are written to the current project directory with a timestamped name such as `aetherink-canvas-20260418-173015.png`.
 
 ## Platform Notes
 
