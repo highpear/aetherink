@@ -107,6 +107,8 @@ Run these checks in order when validating the current overlay workflow on macOS.
 Useful after the core drawing workflow feels stable.
 
 - [ ] Screenshot annotation mode
+- [ ] Quick save directory setting for PNG export
+- [ ] One-click quick save to the selected export directory
 - [ ] Quick global shortcut to show or hide the overlay
 - [ ] Export stroke data
 
