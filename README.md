@@ -63,6 +63,7 @@ Overlay workflow
 ## Shortcuts
 
 - `Ctrl+Z`: Undo the last stroke
+- `Ctrl+S` or `Cmd+S`: Open the PNG save dialog
 - `Ctrl+Shift+Z` or `Ctrl+Y`: Redo the last undone change
 - `Ctrl+Shift+C`: Clear the canvas
 - `Ctrl+Delete`: Clear the canvas
