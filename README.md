@@ -25,7 +25,9 @@ Drawing
 - Adjustable eraser size
 - Basic color palette
 - Undo last stroke
+- Redo last undone change
 - Clear canvas button
+- Save the current canvas as a PNG file
 - Keyboard shortcuts for undo and clear
 
 Canvas and window
@@ -55,11 +57,13 @@ Overlay workflow
 4. Toggle the `Draw: On` / `Draw: Off` control if you want to pause or resume editing.
 5. Open `Settings` to switch between white and transparent canvas modes and adjust overlay behavior.
 6. Enable `Always on top` when you want to keep the canvas above other windows.
-7. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
+7. Use `Save PNG` to export the current canvas to a PNG file in the project folder.
+8. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
 
 ## Shortcuts
 
 - `Ctrl+Z`: Undo the last stroke
+- `Ctrl+Shift+Z` or `Ctrl+Y`: Redo the last undone change
 - `Ctrl+Shift+C`: Clear the canvas
 - `Ctrl+Delete`: Clear the canvas
 - `Ctrl+Shift+O`: Toggle overlay click-through mode while shortcut monitoring is available
@@ -75,6 +79,12 @@ Overlay workflow
 - `Borderless window`: Hide standard window decorations
 - `Transparent window background`: Blend the window chrome and panel background into the desktop
 - `Click-through mode`: Pass mouse input through the overlay when supported and safe to enable
+
+## PNG Export
+
+- `Save PNG` exports the current canvas area only, without the top bar or cursor preview.
+- The PNG background follows the current canvas background setting, including transparent canvas opacity.
+- Exported files are written to the current project directory with a timestamped name such as `aetherink-canvas-1713436800.png`.
 
 ## Platform Notes
 

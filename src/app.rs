@@ -2,13 +2,14 @@ mod settings;
 mod settings_window;
 mod ui;
 
-use std::time::Duration;
+use std::path::PathBuf;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use eframe::egui;
 
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
-    clear_button, drawing_mode_label, keyboard_shortcut_pressed, redo_button,
+    clear_button, drawing_mode_label, keyboard_shortcut_pressed, redo_button, save_png_button,
     show_pen_color_presets, show_pen_width_presets, undo_button,
 };
 use crate::canvas::CanvasState;
@@ -23,6 +24,7 @@ pub struct AetherInkApp {
     canvas: CanvasState,
     overlay: OverlaySettings,
     is_settings_window_open: bool,
+    export_status_message: Option<String>,
     temporary_drawing_active: bool,
     click_through_controller: ClickThroughController,
 }
@@ -177,6 +179,7 @@ impl AetherInkApp {
             self.show_drawing_mode_toggle(ui);
             self.show_canvas_actions(ui);
             self.show_always_on_top_toggle(ui, ctx);
+            self.show_export_status(ui);
             self.show_overlay_status(ui);
             self.show_settings_button(ui);
         });
@@ -281,6 +284,17 @@ impl AetherInkApp {
             self.canvas.clear();
         }
 
+        if ui
+            .add(save_png_button())
+            .on_hover_text("Save the current canvas as a PNG file in the project folder")
+            .clicked()
+        {
+            self.export_status_message = Some(match self.save_canvas_png() {
+                Ok(path) => format!("Saved PNG: {}", path.display()),
+                Err(error) => error,
+            });
+        }
+
         ui.separator();
     }
 
@@ -316,6 +330,15 @@ impl AetherInkApp {
         };
 
         ui.label(click_through_status);
+    }
+
+    fn show_export_status(&self, ui: &mut egui::Ui) {
+        let Some(message) = &self.export_status_message else {
+            return;
+        };
+
+        ui.separator();
+        ui.label(message);
     }
 
     fn show_settings_button(&mut self, ui: &mut egui::Ui) {
@@ -361,4 +384,25 @@ impl AetherInkApp {
             ctx.request_repaint_after(CLICK_THROUGH_POLL_INTERVAL);
         }
     }
+
+    fn save_canvas_png(&mut self) -> Result<PathBuf, String> {
+        self.canvas.stop_drawing();
+
+        let current_directory = std::env::current_dir()
+            .map_err(|error| format!("Failed to resolve the current directory: {error}"))?;
+        let path = current_directory.join(export_file_name());
+
+        self.canvas.export_png(&path)?;
+
+        Ok(path)
+    }
+}
+
+fn export_file_name() -> String {
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    format!("aetherink-canvas-{timestamp}.png")
 }
