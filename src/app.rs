@@ -40,6 +40,7 @@ struct ExportStatus {
 pub struct AetherInkApp {
     canvas: CanvasState,
     overlay: OverlaySettings,
+    last_export_directory: Option<PathBuf>,
     is_settings_window_open: bool,
     export_status: Option<ExportStatus>,
     temporary_drawing_active: bool,
@@ -120,12 +121,14 @@ impl AetherInkApp {
     fn apply_settings(&mut self, settings: AppSettings) {
         self.canvas.apply_settings(settings.canvas);
         self.overlay = settings.overlay;
+        self.last_export_directory = settings.last_export_directory;
     }
 
     fn collect_settings(&self) -> AppSettings {
         AppSettings {
             canvas: self.canvas.settings(),
             overlay: self.overlay.clone(),
+            last_export_directory: self.last_export_directory.clone(),
         }
     }
 
@@ -446,14 +449,20 @@ impl AetherInkApp {
     fn save_canvas_png(&mut self) -> Result<Option<PathBuf>, String> {
         self.canvas.stop_drawing();
 
-        let Some(path) = FileDialog::new()
+        let mut file_dialog = FileDialog::new()
             .add_filter("PNG image", &["png"])
-            .set_file_name(&export_file_name())
-            .save_file()
-        else {
+            .set_file_name(&export_file_name());
+
+        if let Some(directory) = &self.last_export_directory {
+            file_dialog = file_dialog.set_directory(directory);
+        }
+
+        let Some(path) = file_dialog.save_file() else {
             return Ok(None);
         };
         let path = ensure_png_extension(&path);
+
+        self.last_export_directory = path.parent().map(Path::to_path_buf);
 
         self.canvas.export_png(&path)?;
 
