@@ -87,6 +87,7 @@ Overlay workflow
 - The PNG background follows the current canvas background setting, including transparent canvas opacity.
 - The save dialog suggests a timestamped name such as `aetherink-canvas-20260418-173015.png`.
 - If you omit the file extension when saving, AetherInk automatically appends `.png`.
+- After a successful export, AetherInk remembers that folder and uses it as the default save location next time.
 
 ## Platform Notes
 

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 use crate::canvas::CanvasSettings;
@@ -28,4 +30,5 @@ impl Default for OverlaySettings {
 pub(crate) struct AppSettings {
     pub(crate) canvas: CanvasSettings,
     pub(crate) overlay: OverlaySettings,
+    pub(crate) last_export_directory: Option<PathBuf>,
 }
