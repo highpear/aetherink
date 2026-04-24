@@ -86,6 +86,7 @@ impl eframe::App for AetherInkApp {
                 self.canvas.ui(ui, self.overlay.drawing_enabled);
             });
 
+        self.show_overlay_status_banner(ctx);
         self.show_export_toast(ctx);
         self.schedule_repaint(ctx);
     }
@@ -165,9 +166,7 @@ impl AetherInkApp {
 
     fn can_enable_click_through_mode(&self) -> bool {
         self.click_through_controller.supports_pointer_passthrough()
-            && self
-                .click_through_controller
-                .supports_shortcut_monitoring()
+            && self.click_through_controller.supports_shortcut_monitoring()
     }
 
     fn set_temporary_drawing_active(&mut self, ctx: &egui::Context, active: bool) {
@@ -210,7 +209,6 @@ impl AetherInkApp {
             self.show_drawing_mode_toggle(ui);
             self.show_canvas_actions(ui);
             self.show_always_on_top_toggle(ui, ctx);
-            self.show_overlay_status(ui);
             self.show_settings_button(ui);
         });
     }
@@ -338,17 +336,16 @@ impl AetherInkApp {
         }
     }
 
-    fn show_overlay_status(&self, ui: &mut egui::Ui) {
+    fn overlay_status_text(&self) -> Option<String> {
         if !self.overlay.click_through_mode {
-            return;
+            return None;
         }
 
-        ui.separator();
         let temporary_drawing_label = self
             .click_through_controller
             .temporary_drawing_shortcut_label();
         let overlay_toggle_shortcut_label = "Ctrl+Shift+O";
-        let click_through_status = if self.temporary_drawing_active {
+        let status = if self.temporary_drawing_active {
             format!(
                 "Release {} to return to click-through, or press {} to toggle overlay off.",
                 temporary_drawing_label, overlay_toggle_shortcut_label
@@ -360,7 +357,44 @@ impl AetherInkApp {
             )
         };
 
-        ui.label(click_through_status);
+        Some(status)
+    }
+
+    fn show_overlay_status_banner(&self, ctx: &egui::Context) {
+        let Some(status) = self.overlay_status_text() else {
+            return;
+        };
+
+        let (fill_color, stroke_color, text_color) = if self.temporary_drawing_active {
+            (
+                egui::Color32::from_rgba_unmultiplied(230, 247, 236, 232),
+                egui::Color32::from_rgb(86, 162, 118),
+                egui::Color32::from_rgb(36, 94, 62),
+            )
+        } else {
+            (
+                egui::Color32::from_rgba_unmultiplied(227, 236, 248, 232),
+                egui::Color32::from_rgb(127, 146, 179),
+                egui::Color32::from_rgb(34, 44, 66),
+            )
+        };
+
+        egui::Area::new("overlay_status_banner".into())
+            .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -16.0))
+            .interactable(false)
+            .show(ctx, |ui| {
+                ui.set_max_width(640.0);
+                egui::Frame::new()
+                    .fill(fill_color)
+                    .stroke(egui::Stroke::new(1.0, stroke_color))
+                    .corner_radius(8.0)
+                    .inner_margin(egui::Margin::symmetric(12, 8))
+                    .show(ui, |ui| {
+                        ui.add(
+                            egui::Label::new(egui::RichText::new(status).color(text_color)).wrap(),
+                        );
+                    });
+            });
     }
 
     fn show_export_toast(&mut self, ctx: &egui::Context) {

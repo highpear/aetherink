@@ -75,7 +75,7 @@ The overlay foundation exists, but platform behavior still needs tightening.
 - [x] Keep click-through disabled if reliable shortcut monitoring is unavailable
 - [ ] Investigate Windows transparent window edge / shadow visibility in real usage
 - [x] Define fallback behavior if global shortcut monitoring is unavailable
-- [ ] Review whether overlay status messaging should be visible outside the top bar
+- [x] Review whether overlay status messaging should be visible outside the top bar
 
 ## macOS Validation Checklist
 
