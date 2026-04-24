@@ -11,8 +11,8 @@ use rfd::FileDialog;
 
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
-    clear_button, drawing_mode_label, keyboard_shortcut_pressed, redo_button, save_png_button,
-    show_pen_color_presets, show_pen_width_presets, undo_button,
+    clear_button, drawing_mode_label, keyboard_shortcut_pressed, quick_save_button, redo_button,
+    save_png_button, show_pen_color_presets, show_pen_width_presets, undo_button,
 };
 use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
@@ -69,6 +69,10 @@ impl eframe::App for AetherInkApp {
 
         if self.canvas.has_strokes() && keyboard_shortcut_pressed(ctx, egui::Key::S, false) {
             self.start_png_export();
+        }
+
+        if self.canvas.has_strokes() && keyboard_shortcut_pressed(ctx, egui::Key::S, true) {
+            self.start_quick_png_export();
         }
 
         self.show_top_bar(ctx);
@@ -324,6 +328,20 @@ impl AetherInkApp {
             self.start_png_export();
         }
 
+        let can_quick_save = has_strokes && self.last_export_directory.is_some();
+
+        if ui
+            .add_enabled(can_quick_save, quick_save_button())
+            .on_hover_text(if self.last_export_directory.is_some() {
+                "Save the current canvas to the quick save folder (Ctrl/Cmd+Shift+S)"
+            } else {
+                "Choose a quick save folder in Settings before using Quick Save"
+            })
+            .clicked()
+        {
+            self.start_quick_png_export();
+        }
+
         ui.separator();
     }
 
@@ -509,6 +527,28 @@ impl AetherInkApp {
         Ok(Some(path))
     }
 
+    fn quick_save_canvas_png(&mut self) -> Result<PathBuf, String> {
+        self.canvas.stop_drawing();
+
+        let Some(directory) = &self.last_export_directory else {
+            return Err(String::from(
+                "Choose a quick save folder in Settings before using Quick Save.",
+            ));
+        };
+
+        if !directory.is_dir() {
+            return Err(format!(
+                "Quick save folder is not available: {}",
+                directory.display()
+            ));
+        }
+
+        let path = directory.join(export_file_name());
+        self.canvas.export_png(&path)?;
+
+        Ok(path)
+    }
+
     fn start_png_export(&mut self) {
         self.export_status = match self.save_canvas_png() {
             Ok(Some(path)) => Some(ExportStatus {
@@ -517,6 +557,21 @@ impl AetherInkApp {
                 visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
             }),
             Ok(None) => self.export_status.take(),
+            Err(error) => Some(ExportStatus {
+                kind: ExportStatusKind::Error,
+                message: error,
+                visible_until: Instant::now() + ERROR_TOAST_DURATION,
+            }),
+        };
+    }
+
+    fn start_quick_png_export(&mut self) {
+        self.export_status = match self.quick_save_canvas_png() {
+            Ok(path) => Some(ExportStatus {
+                kind: ExportStatusKind::Success,
+                message: format!("Quick saved PNG: {}", path.display()),
+                visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
+            }),
             Err(error) => Some(ExportStatus {
                 kind: ExportStatusKind::Error,
                 message: error,

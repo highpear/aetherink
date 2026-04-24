@@ -122,6 +122,40 @@ impl AetherInkApp {
                 }
 
                 ui.separator();
+                ui.label("Export");
+
+                let quick_save_folder = self
+                    .last_export_directory
+                    .as_ref()
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_else(|| String::from("Not set"));
+
+                ui.label(format!("Quick save folder: {quick_save_folder}"));
+
+                ui.horizontal(|ui| {
+                    if ui.button("Choose folder").clicked() {
+                        let mut folder_dialog = rfd::FileDialog::new();
+
+                        if let Some(directory) = &self.last_export_directory {
+                            folder_dialog = folder_dialog.set_directory(directory);
+                        }
+
+                        if let Some(directory) = folder_dialog.pick_folder() {
+                            self.last_export_directory = Some(directory);
+                        }
+                    }
+
+                    if ui
+                        .add_enabled(self.last_export_directory.is_some(), egui::Button::new("Clear"))
+                        .clicked()
+                    {
+                        self.last_export_directory = None;
+                    }
+                });
+
+                ui.small("Quick Save writes timestamped PNG files to this folder.");
+
+                ui.separator();
                 ui.label("Overlay");
 
                 ui.add_enabled_ui(click_through_can_be_enabled && !is_drawing, |ui| {

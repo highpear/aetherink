@@ -28,6 +28,7 @@ Drawing
 - Redo last undone change
 - Clear canvas button
 - Save the current canvas as a PNG file
+- Quick save the current canvas as a PNG file
 - Keyboard shortcuts for undo and clear
 
 Canvas and window
@@ -59,12 +60,14 @@ Overlay workflow
 5. Open `Settings` to switch between white and transparent canvas modes and adjust overlay behavior.
 6. Enable `Always on top` when you want to keep the canvas above other windows.
 7. Use `Save PNG` to choose where to export the current canvas as a PNG file.
-8. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
+8. Set a quick save folder in `Settings`, then use `Quick Save` to export without opening a save dialog.
+9. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
 
 ## Shortcuts
 
 - `Ctrl+Z`: Undo the last stroke
 - `Ctrl+S` or `Cmd+S`: Open the PNG save dialog
+- `Ctrl+Shift+S` or `Cmd+Shift+S`: Quick save a PNG to the selected quick save folder
 - `Ctrl+Shift+Z` or `Ctrl+Y`: Redo the last undone change
 - `Ctrl+Shift+C`: Clear the canvas
 - `Ctrl+Delete`: Clear the canvas
@@ -80,11 +83,13 @@ Overlay workflow
 - `Always on top`: Keep the window above other windows
 - `Borderless window`: Hide standard window decorations
 - `Transparent window background`: Blend the window chrome and panel background into the desktop
+- `Quick save folder`: Choose where one-click PNG exports are written
 - `Click-through mode`: Pass mouse input through the overlay when supported and safe to enable
 
 ## PNG Export
 
 - `Save PNG` exports the current canvas area only, without the top bar or cursor preview.
+- `Quick Save` writes a timestamped PNG to the selected quick save folder without opening a dialog.
 - The PNG background follows the current canvas background setting, including transparent canvas opacity.
 - The save dialog suggests a timestamped name such as `aetherink-canvas-20260418-173015.png`.
 - If you omit the file extension when saving, AetherInk automatically appends `.png`.
