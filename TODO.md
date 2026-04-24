@@ -145,7 +145,7 @@ Keep changes incremental and measurable.
 - [ ] App icon
 - [ ] Windows build validation
 - [ ] macOS build validation
-- [ ] README usage notes for overlay features
+- [x] README usage notes for overlay features
 - [ ] First packaged release
 
 ---
