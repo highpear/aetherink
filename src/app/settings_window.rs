@@ -18,8 +18,7 @@ impl AetherInkApp {
         let click_through_supported = self.click_through_controller.supports_pointer_passthrough();
         let click_through_shortcuts_supported =
             self.click_through_controller.supports_shortcut_monitoring();
-        let click_through_can_be_enabled =
-            click_through_supported && click_through_shortcuts_supported;
+        let click_through_can_be_enabled = self.can_enable_click_through_mode();
         let is_drawing = self.canvas.is_drawing();
 
         egui::Window::new("Settings")
