@@ -158,10 +158,16 @@ impl AetherInkApp {
     }
 
     fn set_click_through_mode(&mut self, ctx: &egui::Context, enabled: bool) {
-        self.overlay.click_through_mode =
-            enabled && self.click_through_controller.supports_pointer_passthrough();
+        self.overlay.click_through_mode = enabled && self.can_enable_click_through_mode();
         self.temporary_drawing_active = false;
         self.apply_pointer_passthrough(ctx);
+    }
+
+    fn can_enable_click_through_mode(&self) -> bool {
+        self.click_through_controller.supports_pointer_passthrough()
+            && self
+                .click_through_controller
+                .supports_shortcut_monitoring()
     }
 
     fn set_temporary_drawing_active(&mut self, ctx: &egui::Context, active: bool) {
