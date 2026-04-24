@@ -20,6 +20,7 @@ Drawing currently available:
 - [x] Redo last undone change
 - [x] Clear canvas
 - [x] Save drawing as PNG
+- [x] Quick save drawing as PNG
 - [x] Keyboard shortcuts for undo and clear
 
 Canvas and window controls currently available:
@@ -122,8 +123,8 @@ Useful after the core drawing workflow feels stable.
 
 - [ ] Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
 - [ ] Screenshot annotation mode
-- [ ] Quick save directory setting for PNG export
-- [ ] One-click quick save to the selected export directory
+- [x] Quick save directory setting for PNG export
+- [x] One-click quick save to the selected export directory
 - [ ] Investigate Windows background capture for transparent PNG export
 - [ ] Quick global shortcut to show or hide the overlay
 - [ ] Export stroke data
