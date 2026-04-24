@@ -47,6 +47,7 @@ Overlay workflow
 - Click-through mode on Windows
 - Overlay toggle shortcut while click-through is active
 - Temporary drawing while click-through is enabled
+- Floating overlay status while click-through is active
 - Click-through remains disabled on platforms where reliable shortcut monitoring is unavailable
 
 ## How to Use
