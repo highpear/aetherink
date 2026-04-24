@@ -95,6 +95,17 @@ Overlay workflow
 - If you omit the file extension when saving, AetherInk automatically appends `.png`.
 - After a successful export, AetherInk remembers that folder and uses it as the default save location next time.
 
+## Overlay Usage Notes
+
+- Enable `Always on top` before using AetherInk as a screen annotation overlay.
+- Use `Transparent window background` with a transparent canvas when you want the overlay to visually blend into the desktop.
+- Enable `Click-through mode` only after the overlay is positioned and drawing is ready.
+- While click-through mode is active, pointer input passes through AetherInk to the window behind it.
+- Hold `Shift` to draw temporarily while click-through mode remains enabled.
+- Press `Ctrl+Shift+O` to turn click-through mode off from the keyboard.
+- A floating status banner appears while click-through mode is active so the current interaction mode stays visible.
+- Click-through is disabled automatically when reliable shortcut monitoring is unavailable.
+
 ## Platform Notes
 
 - Windows currently has the most complete overlay workflow, including click-through mode and keyboard-driven return to drawing.
@@ -104,12 +115,26 @@ Overlay workflow
 
 ## Near-Term Focus
 
-- Conservative stroke smoothing or point filtering
-- Improved pen selection UX beyond the basic color palette
-- macOS overlay behavior validation
-- Export and save features after the drawing workflow is stable
+- Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
+- Investigate Windows transparent window edge and shadow behavior in real usage
+- Review stroke rendering cost as stroke count grows
+- Add focused validation for drawing and overlay regressions
 
 ## Tech Stack
 
 - Rust
 - egui / eframe
+
+## Development
+
+Build the app with:
+
+```sh
+cargo build
+```
+
+Run the app locally with:
+
+```sh
+cargo run
+```
