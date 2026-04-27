@@ -209,10 +209,11 @@ impl AetherInkApp {
     fn show_top_bar_contents(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.horizontal(|ui| {
             self.show_window_drag_handle(ui, ctx);
-            self.show_pen_controls(ui);
-            self.show_drawing_mode_toggle(ui);
-            self.show_canvas_actions(ui);
-            self.show_always_on_top_toggle(ui, ctx);
+            self.show_tool_group(ui);
+            self.show_style_group(ui);
+            self.show_history_group(ui);
+            self.show_export_group(ui);
+            self.show_overlay_group(ui, ctx);
             self.show_settings_button(ui);
         });
     }
@@ -235,7 +236,7 @@ impl AetherInkApp {
         ui.separator();
     }
 
-    fn show_pen_controls(&mut self, ui: &mut egui::Ui) {
+    fn show_tool_group(&mut self, ui: &mut egui::Ui) {
         ui.label("Tool:");
 
         for tool in [Tool::Pen, Tool::Eraser] {
@@ -247,8 +248,11 @@ impl AetherInkApp {
             }
         }
 
+        self.show_drawing_mode_toggle(ui);
         ui.separator();
+    }
 
+    fn show_style_group(&mut self, ui: &mut egui::Ui) {
         if self.canvas.current_tool() == Tool::Eraser {
             ui.label("Size:");
             ui.add(egui::Slider::new(
@@ -287,10 +291,11 @@ impl AetherInkApp {
         ui.separator();
     }
 
-    fn show_canvas_actions(&mut self, ui: &mut egui::Ui) {
+    fn show_history_group(&mut self, ui: &mut egui::Ui) {
+        ui.label("History:");
+
         let can_undo = self.canvas.can_undo();
         let can_redo = self.canvas.can_redo();
-        let has_strokes = self.canvas.has_strokes();
 
         if ui
             .add_enabled(can_undo, undo_button())
@@ -309,12 +314,20 @@ impl AetherInkApp {
         }
 
         if ui
-            .add_enabled(has_strokes, clear_button())
+            .add_enabled(self.canvas.has_strokes(), clear_button())
             .on_hover_text("Remove all strokes from the canvas (Ctrl+Shift+C or Ctrl+Delete)")
             .clicked()
         {
             self.canvas.clear();
         }
+
+        ui.separator();
+    }
+
+    fn show_export_group(&mut self, ui: &mut egui::Ui) {
+        ui.label("Export:");
+
+        let has_strokes = self.canvas.has_strokes();
 
         if ui
             .add_enabled(has_strokes, save_png_button())
@@ -341,6 +354,13 @@ impl AetherInkApp {
         {
             self.start_quick_png_export();
         }
+
+        ui.separator();
+    }
+
+    fn show_overlay_group(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        ui.label("Overlay:");
+        self.show_always_on_top_toggle(ui, ctx);
 
         ui.separator();
     }
