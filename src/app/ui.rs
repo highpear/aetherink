@@ -1,16 +1,12 @@
 use eframe::egui;
 
-const PEN_PRESET_COLORS: [(&str, egui::Color32); 10] = [
+const PEN_PRESET_COLORS: [(&str, egui::Color32); 6] = [
     ("Black", egui::Color32::BLACK),
-    ("White", egui::Color32::WHITE),
-    ("Gray", egui::Color32::from_rgb(107, 114, 128)),
     ("Red", egui::Color32::from_rgb(220, 38, 38)),
-    ("Orange", egui::Color32::from_rgb(234, 88, 12)),
-    ("Yellow", egui::Color32::from_rgb(234, 179, 8)),
-    ("Green", egui::Color32::from_rgb(22, 163, 74)),
-    ("Cyan", egui::Color32::from_rgb(8, 145, 178)),
     ("Blue", egui::Color32::from_rgb(37, 99, 235)),
-    ("Violet", egui::Color32::from_rgb(124, 58, 237)),
+    ("Green", egui::Color32::from_rgb(22, 163, 74)),
+    ("Yellow", egui::Color32::from_rgb(234, 179, 8)),
+    ("White", egui::Color32::WHITE),
 ];
 const PEN_WIDTH_PRESETS: [f32; 5] = [1.0, 2.0, 4.0, 8.0, 12.0];
 
@@ -49,22 +45,44 @@ pub(crate) fn show_pen_color_presets(ui: &mut egui::Ui, current_color: &mut egui
             } else {
                 egui::Color32::from_gray(120)
             };
+            let check_color = if color == egui::Color32::WHITE || color == egui::Color32::YELLOW {
+                egui::Color32::BLACK
+            } else {
+                egui::Color32::WHITE
+            };
 
-            let response = ui
-                .add(
-                    egui::Button::new("")
-                        .min_size(egui::vec2(18.0, 18.0))
-                        .fill(color)
-                        .stroke(egui::Stroke::new(1.0, stroke_color))
-                        .corner_radius(9.0),
-                )
-                .on_hover_text(label);
+            let (rect, response) =
+                ui.allocate_exact_size(egui::vec2(18.0, 18.0), egui::Sense::click());
+            let response = response.on_hover_text(label);
+            let painter = ui.painter();
+
+            painter.rect_filled(rect, 9.0, color);
+            painter.rect_stroke(
+                rect,
+                9.0,
+                egui::Stroke::new(1.0, stroke_color),
+                egui::StrokeKind::Outside,
+            );
+
+            if is_selected {
+                let check_stroke = egui::Stroke::new(2.0, check_color);
+                let first = egui::pos2(rect.left() + 4.5, rect.center().y);
+                let middle = egui::pos2(rect.left() + 7.5, rect.bottom() - 5.0);
+                let last = egui::pos2(rect.right() - 4.0, rect.top() + 5.0);
+
+                painter.line_segment([first, middle], check_stroke);
+                painter.line_segment([middle, last], check_stroke);
+            }
 
             if response.clicked() {
                 *current_color = color;
             }
         }
     });
+}
+
+pub(crate) fn top_bar_group_label(ui: &mut egui::Ui, label: &str) {
+    ui.label(egui::RichText::new(label).strong());
 }
 
 pub(crate) fn show_pen_width_presets(ui: &mut egui::Ui, current_width: &mut f32) {

@@ -12,7 +12,8 @@ use rfd::FileDialog;
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
     clear_button, drawing_mode_label, keyboard_shortcut_pressed, quick_save_button, redo_button,
-    save_png_button, show_pen_color_presets, show_pen_width_presets, undo_button,
+    save_png_button, show_pen_color_presets, show_pen_width_presets, top_bar_group_label,
+    undo_button,
 };
 use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
@@ -207,14 +208,14 @@ impl AetherInkApp {
     }
 
     fn show_top_bar_contents(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing.x = 8.0;
+
             self.show_window_drag_handle(ui, ctx);
-            self.show_tool_group(ui);
+            self.show_drawing_group(ui);
             self.show_style_group(ui);
-            self.show_history_group(ui);
             self.show_export_group(ui);
             self.show_overlay_group(ui, ctx);
-            self.show_settings_button(ui);
         });
     }
 
@@ -236,8 +237,8 @@ impl AetherInkApp {
         ui.separator();
     }
 
-    fn show_tool_group(&mut self, ui: &mut egui::Ui) {
-        ui.label("Tool:");
+    fn show_drawing_group(&mut self, ui: &mut egui::Ui) {
+        top_bar_group_label(ui, "Drawing");
 
         for tool in [Tool::Pen, Tool::Eraser] {
             if ui
@@ -249,50 +250,6 @@ impl AetherInkApp {
         }
 
         self.show_drawing_mode_toggle(ui);
-        ui.separator();
-    }
-
-    fn show_style_group(&mut self, ui: &mut egui::Ui) {
-        if self.canvas.current_tool() == Tool::Eraser {
-            ui.label("Size:");
-            ui.add(egui::Slider::new(
-                self.canvas.eraser_radius_mut(),
-                2.0..=32.0,
-            ));
-            ui.separator();
-            return;
-        }
-
-        ui.label("Color:");
-        ui.color_edit_button_srgba(self.canvas.current_color_mut());
-        show_pen_color_presets(ui, self.canvas.current_color_mut());
-
-        ui.label("Width:");
-        show_pen_width_presets(ui, self.canvas.current_width_mut());
-        ui.add(egui::Slider::new(
-            self.canvas.current_width_mut(),
-            1.0..=20.0,
-        ));
-        ui.separator();
-    }
-
-    fn show_drawing_mode_toggle(&mut self, ui: &mut egui::Ui) {
-        if ui
-            .selectable_label(
-                self.overlay.drawing_enabled,
-                drawing_mode_label(self.overlay.drawing_enabled),
-            )
-            .on_hover_text("Toggle whether mouse dragging draws on the canvas")
-            .clicked()
-        {
-            self.set_drawing_enabled(!self.overlay.drawing_enabled);
-        }
-
-        ui.separator();
-    }
-
-    fn show_history_group(&mut self, ui: &mut egui::Ui) {
-        ui.label("History:");
 
         let can_undo = self.canvas.can_undo();
         let can_redo = self.canvas.can_redo();
@@ -324,8 +281,45 @@ impl AetherInkApp {
         ui.separator();
     }
 
+    fn show_style_group(&mut self, ui: &mut egui::Ui) {
+        top_bar_group_label(ui, "Style");
+
+        if self.canvas.current_tool() == Tool::Eraser {
+            ui.label("Size");
+            ui.add(egui::Slider::new(
+                self.canvas.eraser_radius_mut(),
+                2.0..=32.0,
+            ));
+            ui.separator();
+            return;
+        }
+
+        show_pen_color_presets(ui, self.canvas.current_color_mut());
+
+        ui.label("Width");
+        show_pen_width_presets(ui, self.canvas.current_width_mut());
+        ui.add(egui::Slider::new(
+            self.canvas.current_width_mut(),
+            1.0..=20.0,
+        ));
+        ui.separator();
+    }
+
+    fn show_drawing_mode_toggle(&mut self, ui: &mut egui::Ui) {
+        if ui
+            .selectable_label(
+                self.overlay.drawing_enabled,
+                drawing_mode_label(self.overlay.drawing_enabled),
+            )
+            .on_hover_text("Toggle whether mouse dragging draws on the canvas")
+            .clicked()
+        {
+            self.set_drawing_enabled(!self.overlay.drawing_enabled);
+        }
+    }
+
     fn show_export_group(&mut self, ui: &mut egui::Ui) {
-        ui.label("Export:");
+        top_bar_group_label(ui, "Export");
 
         let has_strokes = self.canvas.has_strokes();
 
@@ -359,10 +353,9 @@ impl AetherInkApp {
     }
 
     fn show_overlay_group(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
-        ui.label("Overlay:");
+        top_bar_group_label(ui, "Overlay");
         self.show_always_on_top_toggle(ui, ctx);
-
-        ui.separator();
+        self.show_settings_button(ui);
     }
 
     fn show_always_on_top_toggle(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
@@ -474,8 +467,6 @@ impl AetherInkApp {
     }
 
     fn show_settings_button(&mut self, ui: &mut egui::Ui) {
-        ui.separator();
-
         if ui.button("Settings").clicked() {
             self.is_settings_window_open = true;
         }

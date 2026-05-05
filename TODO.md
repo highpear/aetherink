@@ -14,6 +14,7 @@ Drawing currently available:
 - [x] Freehand drawing with mouse drag
 - [x] Pen and eraser tools
 - [x] Stroke color selection
+- [x] Simplified practical pen color palette
 - [x] Stroke width adjustment
 - [x] Eraser size adjustment
 - [x] Undo last stroke
@@ -121,7 +122,7 @@ Run these checks in order when validating the current overlay workflow on macOS.
 
 Useful after the core drawing workflow feels stable.
 
-- [ ] Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
+- [x] Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
 - [ ] Screenshot annotation mode
 - [x] Quick save directory setting for PNG export
 - [x] One-click quick save to the selected export directory
