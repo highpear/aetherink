@@ -115,7 +115,6 @@ Overlay workflow
 
 ## Near-Term Focus
 
-- Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
 - Investigate Windows transparent window edge and shadow behavior in real usage
 - Review stroke rendering cost as stroke count grows
 - Extend validation around overlay regressions as platform behavior tightens

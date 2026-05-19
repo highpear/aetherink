@@ -60,10 +60,11 @@ These are the most useful next steps based on the current codebase and project p
 
 These do not all require immediate implementation, but clarifying them early should reduce rework.
 
-- [ ] Define the scope of undo history for clear, erase, and future canvas actions
+- [x] Define undo history behavior for stroke, clear, and erase actions
+- [ ] Define undo history scope for future canvas actions
 - [ ] Decide how stroke smoothing should balance responsiveness and fidelity
 - [ ] Decide how overlay UI should appear in transparent mode
-- [ ] Define the interaction model while click-through mode is active
+- [x] Define the interaction model while click-through mode is active
 - [ ] Decide how much platform-specific behavior should be normalized across Windows and macOS
 
 ---
