@@ -35,3 +35,27 @@ impl Tool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stroke_is_meaningful_only_after_two_points() {
+        let mut stroke = DrawStroke::new(Color32::BLACK, 2.0);
+
+        assert!(!stroke.is_meaningful());
+
+        stroke.points.push(Pos2::new(0.0, 0.0));
+        assert!(!stroke.is_meaningful());
+
+        stroke.points.push(Pos2::new(1.0, 1.0));
+        assert!(stroke.is_meaningful());
+    }
+
+    #[test]
+    fn tool_labels_match_ui_text() {
+        assert_eq!(Tool::Pen.label(), "Pen");
+        assert_eq!(Tool::Eraser.label(), "Eraser");
+    }
+}

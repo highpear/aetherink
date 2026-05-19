@@ -783,3 +783,114 @@ fn is_near_canvas_edge(rect: egui::Rect, pointer_pos: egui::Pos2) -> bool {
         || distance_to_right <= CANVAS_BORDER_HOVER_THRESHOLD
         || distance_to_bottom <= CANVAS_BORDER_HOVER_THRESHOLD
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn stroke(points: &[(f32, f32)]) -> DrawStroke {
+        DrawStroke {
+            points: points.iter().map(|(x, y)| egui::pos2(*x, *y)).collect(),
+            color: Color32::BLACK,
+            width: 2.0,
+        }
+    }
+
+    #[test]
+    fn clear_records_undo_snapshot() {
+        let original_stroke = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
+        let mut canvas = CanvasState {
+            strokes: vec![original_stroke.clone()],
+            ..Default::default()
+        };
+
+        canvas.clear();
+
+        assert!(canvas.strokes.is_empty());
+        assert!(canvas.can_undo());
+
+        canvas.undo();
+
+        assert_eq!(canvas.strokes, vec![original_stroke]);
+    }
+
+    #[test]
+    fn redo_restores_cleared_canvas() {
+        let mut canvas = CanvasState {
+            strokes: vec![stroke(&[(0.0, 0.0), (10.0, 0.0)])],
+            ..Default::default()
+        };
+
+        canvas.clear();
+        canvas.undo();
+        canvas.redo();
+
+        assert!(canvas.strokes.is_empty());
+        assert!(canvas.can_undo());
+        assert!(!canvas.can_redo());
+    }
+
+    #[test]
+    fn new_stroke_clears_redo_history() {
+        let mut canvas = CanvasState {
+            strokes: vec![stroke(&[(0.0, 0.0), (10.0, 0.0)])],
+            ..Default::default()
+        };
+
+        canvas.clear();
+        canvas.undo();
+        assert!(canvas.can_redo());
+
+        canvas.current_stroke = Some(stroke(&[(5.0, 5.0), (15.0, 5.0)]));
+        canvas.stop_drawing();
+
+        assert!(!canvas.can_redo());
+        assert_eq!(canvas.strokes.len(), 2);
+    }
+
+    #[test]
+    fn transparent_background_opacity_controls_alpha() {
+        let mut canvas = CanvasState::default();
+        *canvas.background_mut() = CanvasBackground::Transparent;
+        *canvas.transparent_background_opacity_mut() = 0.5;
+
+        assert_eq!(canvas.background_color(), Color32::from_white_alpha(127));
+    }
+
+    #[test]
+    fn pen_point_filter_replaces_close_collinear_point() {
+        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
+
+        push_pen_point_if_needed(&mut points, egui::pos2(2.5, 0.0), 2.0);
+
+        assert_eq!(points, vec![egui::pos2(0.0, 0.0), egui::pos2(2.5, 0.0)]);
+    }
+
+    #[test]
+    fn eraser_splits_stroke_around_erased_segment() {
+        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
+        let eraser_path = [egui::pos2(5.0, 0.0)];
+
+        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
+
+        assert_eq!(remaining.len(), 2);
+        assert_eq!(
+            remaining[0].points,
+            vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)]
+        );
+        assert_eq!(
+            remaining[1].points,
+            vec![egui::pos2(8.0, 0.0), egui::pos2(10.0, 0.0)]
+        );
+    }
+
+    #[test]
+    fn near_edges_border_check_ignores_top_edge() {
+        let rect = egui::Rect::from_min_size(egui::pos2(10.0, 10.0), egui::vec2(100.0, 80.0));
+
+        assert!(is_near_canvas_edge(rect, egui::pos2(12.0, 50.0)));
+        assert!(is_near_canvas_edge(rect, egui::pos2(108.0, 50.0)));
+        assert!(is_near_canvas_edge(rect, egui::pos2(50.0, 88.0)));
+        assert!(!is_near_canvas_edge(rect, egui::pos2(50.0, 12.0)));
+    }
+}
