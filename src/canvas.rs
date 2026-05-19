@@ -845,6 +845,33 @@ mod tests {
     }
 
     #[test]
+    fn clear_empty_canvas_does_not_create_undo_history() {
+        let mut canvas = CanvasState::default();
+
+        canvas.clear();
+
+        assert!(canvas.strokes.is_empty());
+        assert!(!canvas.can_undo());
+        assert!(!canvas.can_redo());
+    }
+
+    #[test]
+    fn clear_after_undo_clears_redo_history() {
+        let mut canvas = CanvasState {
+            strokes: vec![stroke(&[(0.0, 0.0), (10.0, 0.0)])],
+            ..Default::default()
+        };
+
+        canvas.clear();
+        canvas.undo();
+        assert!(canvas.can_redo());
+
+        canvas.clear();
+
+        assert!(!canvas.can_redo());
+    }
+
+    #[test]
     fn new_stroke_clears_redo_history() {
         let mut canvas = CanvasState {
             strokes: vec![stroke(&[(0.0, 0.0), (10.0, 0.0)])],
@@ -869,6 +896,18 @@ mod tests {
         *canvas.transparent_background_opacity_mut() = 0.5;
 
         assert_eq!(canvas.background_color(), Color32::from_white_alpha(127));
+    }
+
+    #[test]
+    fn transparent_background_opacity_is_clamped() {
+        let mut canvas = CanvasState::default();
+        *canvas.background_mut() = CanvasBackground::Transparent;
+
+        *canvas.transparent_background_opacity_mut() = -1.0;
+        assert_eq!(canvas.background_color(), Color32::from_white_alpha(0));
+
+        *canvas.transparent_background_opacity_mut() = 2.0;
+        assert_eq!(canvas.background_color(), Color32::from_white_alpha(255));
     }
 
     #[test]
@@ -911,6 +950,21 @@ mod tests {
         assert_eq!(*canvas.current_color_mut(), Color32::from_rgb(37, 99, 235));
         assert_eq!(*canvas.current_width_mut(), 12.0);
         assert_eq!(*canvas.eraser_radius_mut(), 20.0);
+    }
+
+    #[test]
+    fn switching_tool_finishes_current_stroke() {
+        let mut canvas = CanvasState {
+            current_stroke: Some(stroke(&[(0.0, 0.0), (10.0, 0.0)])),
+            ..Default::default()
+        };
+
+        canvas.set_current_tool(Tool::Eraser);
+
+        assert_eq!(canvas.current_tool(), Tool::Eraser);
+        assert_eq!(canvas.strokes, vec![stroke(&[(0.0, 0.0), (10.0, 0.0)])]);
+        assert!(canvas.current_stroke.is_none());
+        assert!(canvas.can_undo());
     }
 
     #[test]
@@ -1022,6 +1076,18 @@ mod tests {
 
         assert_eq!(image.dimensions(), (2, 2));
         assert_eq!(image.get_pixel(0, 0).0, [0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn export_png_requires_canvas_rect() {
+        let path = temp_png_path("missing-rect-export");
+        let canvas = CanvasState::default();
+
+        let error = canvas
+            .export_png(&path)
+            .expect_err("PNG export should fail before the canvas is laid out");
+
+        assert_eq!(error, "The canvas size is not available yet.");
     }
 
     #[test]
