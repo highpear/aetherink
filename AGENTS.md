@@ -191,6 +191,10 @@ If tests are added later:
 - prefer deterministic tests
 - do not add fragile snapshot-heavy tests unless necessary
 
+Current unit tests cover core drawing behavior and related pure logic.
+When changing drawing state, eraser behavior, PNG export, or settings logic,
+run `cargo test` in addition to the normal build check.
+
 ---
 
 ## File Editing Guidelines
