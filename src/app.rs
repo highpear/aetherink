@@ -610,3 +610,32 @@ fn ensure_png_extension(path: &Path) -> PathBuf {
         path.with_extension("png")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ensure_png_extension_adds_missing_extension() {
+        assert_eq!(
+            ensure_png_extension(Path::new("drawing")),
+            PathBuf::from("drawing.png")
+        );
+    }
+
+    #[test]
+    fn ensure_png_extension_replaces_non_png_extension() {
+        assert_eq!(
+            ensure_png_extension(Path::new("drawing.jpeg")),
+            PathBuf::from("drawing.png")
+        );
+    }
+
+    #[test]
+    fn ensure_png_extension_keeps_png_extension_case_insensitively() {
+        assert_eq!(
+            ensure_png_extension(Path::new("drawing.PNG")),
+            PathBuf::from("drawing.PNG")
+        );
+    }
+}

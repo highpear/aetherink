@@ -787,6 +787,8 @@ fn is_near_canvas_edge(rect: egui::Rect, pointer_pos: egui::Pos2) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     fn stroke(points: &[(f32, f32)]) -> DrawStroke {
         DrawStroke {
@@ -794,6 +796,18 @@ mod tests {
             color: Color32::BLACK,
             width: 2.0,
         }
+    }
+
+    fn temp_png_path(name: &str) -> PathBuf {
+        let unique_suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time should be after Unix epoch")
+            .as_nanos();
+
+        std::env::temp_dir().join(format!(
+            "aetherink-{name}-{}-{unique_suffix}.png",
+            std::process::id()
+        ))
     }
 
     #[test]
@@ -858,6 +872,48 @@ mod tests {
     }
 
     #[test]
+    fn settings_capture_current_drawing_defaults() {
+        let mut canvas = CanvasState::default();
+        *canvas.current_color_mut() = Color32::from_rgb(220, 38, 38);
+        *canvas.current_width_mut() = 8.0;
+        *canvas.eraser_radius_mut() = 14.0;
+
+        let settings = canvas.settings();
+
+        assert_eq!(
+            settings.default_pen_color,
+            Color32::from_rgb(220, 38, 38).to_array()
+        );
+        assert_eq!(settings.default_pen_width, 8.0);
+        assert_eq!(settings.eraser_radius, 14.0);
+    }
+
+    #[test]
+    fn apply_settings_restores_canvas_preferences() {
+        let settings = CanvasSettings {
+            background: CanvasBackground::Transparent,
+            transparent_background_opacity: 0.35,
+            transparent_canvas_border_visibility: TransparentCanvasBorderVisibility::Always,
+            default_pen_color: Color32::from_rgb(37, 99, 235).to_array(),
+            default_pen_width: 12.0,
+            eraser_radius: 20.0,
+        };
+        let mut canvas = CanvasState::default();
+
+        canvas.apply_settings(settings);
+
+        assert_eq!(canvas.background(), CanvasBackground::Transparent);
+        assert_eq!(*canvas.transparent_background_opacity_mut(), 0.35);
+        assert_eq!(
+            canvas.transparent_canvas_border_visibility(),
+            TransparentCanvasBorderVisibility::Always
+        );
+        assert_eq!(*canvas.current_color_mut(), Color32::from_rgb(37, 99, 235));
+        assert_eq!(*canvas.current_width_mut(), 12.0);
+        assert_eq!(*canvas.eraser_radius_mut(), 20.0);
+    }
+
+    #[test]
     fn pen_point_filter_replaces_close_collinear_point() {
         let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
 
@@ -882,6 +938,90 @@ mod tests {
             remaining[1].points,
             vec![egui::pos2(8.0, 0.0), egui::pos2(10.0, 0.0)]
         );
+    }
+
+    #[test]
+    fn eraser_keeps_stroke_when_path_misses() {
+        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
+        let eraser_path = [egui::pos2(5.0, 10.0)];
+
+        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
+
+        assert_eq!(remaining.len(), 1);
+        assert_eq!(remaining[0].color, source.color);
+        assert_eq!(remaining[0].width, source.width);
+        assert_eq!(remaining[0].points.first(), source.points.first());
+        assert_eq!(remaining[0].points.last(), source.points.last());
+    }
+
+    #[test]
+    fn eraser_removes_fully_covered_stroke() {
+        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
+        let eraser_path = [egui::pos2(5.0, 0.0)];
+
+        let remaining = erase_from_stroke(&source, &eraser_path, 20.0);
+
+        assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn eraser_drops_non_meaningful_strokes() {
+        let source = stroke(&[(0.0, 0.0)]);
+        let eraser_path = [egui::pos2(0.0, 0.0)];
+
+        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
+
+        assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn export_png_writes_canvas_background_and_strokes() {
+        let path = temp_png_path("stroke-export");
+        let canvas = CanvasState {
+            strokes: vec![stroke(&[(1.0, 1.0), (3.0, 1.0)])],
+            last_canvas_rect: Some(egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(4.0, 4.0),
+            )),
+            ..Default::default()
+        };
+
+        canvas.export_png(&path).expect("PNG export should succeed");
+        let image = image::ImageReader::open(&path)
+            .expect("exported PNG should open")
+            .decode()
+            .expect("exported PNG should decode")
+            .to_rgba8();
+        let _ = std::fs::remove_file(&path);
+
+        assert_eq!(image.dimensions(), (4, 4));
+        assert_eq!(image.get_pixel(3, 3).0, [248, 246, 240, 255]);
+        assert_eq!(image.get_pixel(2, 1).0, [0, 0, 0, 255]);
+    }
+
+    #[test]
+    fn export_png_preserves_transparent_background() {
+        let path = temp_png_path("transparent-export");
+        let mut canvas = CanvasState {
+            last_canvas_rect: Some(egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(2.0, 2.0),
+            )),
+            ..Default::default()
+        };
+        *canvas.background_mut() = CanvasBackground::Transparent;
+        *canvas.transparent_background_opacity_mut() = 0.0;
+
+        canvas.export_png(&path).expect("PNG export should succeed");
+        let image = image::ImageReader::open(&path)
+            .expect("exported PNG should open")
+            .decode()
+            .expect("exported PNG should decode")
+            .to_rgba8();
+        let _ = std::fs::remove_file(&path);
+
+        assert_eq!(image.dimensions(), (2, 2));
+        assert_eq!(image.get_pixel(0, 0).0, [0, 0, 0, 0]);
     }
 
     #[test]
