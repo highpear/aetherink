@@ -520,7 +520,7 @@ impl AetherInkApp {
 
         let mut file_dialog = FileDialog::new()
             .add_filter("PNG image", &["png"])
-            .set_file_name(&export_file_name());
+            .set_file_name(export_file_name());
 
         if let Some(directory) = &self.last_export_directory {
             file_dialog = file_dialog.set_directory(directory);
