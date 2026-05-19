@@ -810,6 +810,23 @@ mod tests {
         ))
     }
 
+    fn assert_pos2_approx_eq(actual: egui::Pos2, expected: egui::Pos2) {
+        const TOLERANCE: f32 = 0.000_001;
+
+        assert!(
+            (actual.x - expected.x).abs() <= TOLERANCE,
+            "x mismatch: actual={}, expected={}",
+            actual.x,
+            expected.x
+        );
+        assert!(
+            (actual.y - expected.y).abs() <= TOLERANCE,
+            "y mismatch: actual={}, expected={}",
+            actual.y,
+            expected.y
+        );
+    }
+
     #[test]
     fn clear_records_undo_snapshot() {
         let original_stroke = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
@@ -977,6 +994,56 @@ mod tests {
     }
 
     #[test]
+    fn pen_point_filter_keeps_turning_points() {
+        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
+
+        push_pen_point_if_needed(&mut points, egui::pos2(2.0, 2.0), 2.0);
+
+        assert_eq!(
+            points,
+            vec![
+                egui::pos2(0.0, 0.0),
+                egui::pos2(2.0, 0.0),
+                egui::pos2(2.0, 2.0)
+            ]
+        );
+    }
+
+    #[test]
+    fn pen_point_filter_adds_distant_collinear_points() {
+        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
+
+        push_pen_point_if_needed(&mut points, egui::pos2(5.0, 0.0), 2.0);
+
+        assert_eq!(
+            points,
+            vec![
+                egui::pos2(0.0, 0.0),
+                egui::pos2(2.0, 0.0),
+                egui::pos2(5.0, 0.0)
+            ]
+        );
+    }
+
+    #[test]
+    fn pen_point_min_distance_grows_with_width_until_cap() {
+        assert_eq!(pen_point_min_distance(1.0), 1.35);
+        assert_eq!(pen_point_min_distance(4.0), 2.4);
+        assert_eq!(pen_point_min_distance(20.0), PEN_POINT_MAX_DISTANCE);
+    }
+
+    #[test]
+    fn sample_segment_points_includes_endpoints_and_even_spacing() {
+        let points = sample_segment_points(egui::pos2(0.0, 0.0), egui::pos2(5.0, 0.0), 2.0);
+
+        assert_eq!(points.len(), 4);
+        assert_pos2_approx_eq(points[0], egui::pos2(0.0, 0.0));
+        assert_pos2_approx_eq(points[1], egui::pos2(5.0 / 3.0, 0.0));
+        assert_pos2_approx_eq(points[2], egui::pos2(10.0 / 3.0, 0.0));
+        assert_pos2_approx_eq(points[3], egui::pos2(5.0, 0.0));
+    }
+
+    #[test]
     fn eraser_splits_stroke_around_erased_segment() {
         let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
         let eraser_path = [egui::pos2(5.0, 0.0)];
@@ -1026,6 +1093,57 @@ mod tests {
         let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
 
         assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn point_inside_eraser_path_checks_single_point_radius() {
+        let eraser_path = [egui::pos2(5.0, 5.0)];
+
+        assert!(point_is_inside_eraser_path(
+            egui::pos2(6.0, 5.0),
+            &eraser_path,
+            1.0
+        ));
+        assert!(!point_is_inside_eraser_path(
+            egui::pos2(6.1, 5.0),
+            &eraser_path,
+            1.0
+        ));
+    }
+
+    #[test]
+    fn point_inside_eraser_path_checks_segment_distance() {
+        let eraser_path = [egui::pos2(0.0, 0.0), egui::pos2(10.0, 0.0)];
+
+        assert!(point_is_inside_eraser_path(
+            egui::pos2(5.0, 1.0),
+            &eraser_path,
+            1.0
+        ));
+        assert!(!point_is_inside_eraser_path(
+            egui::pos2(5.0, 1.1),
+            &eraser_path,
+            1.0
+        ));
+    }
+
+    #[test]
+    fn distance_point_to_segment_clamps_projection_to_segment() {
+        let start = egui::pos2(0.0, 0.0);
+        let end = egui::pos2(10.0, 0.0);
+
+        assert_eq!(
+            distance_point_to_segment(egui::pos2(5.0, 3.0), start, end),
+            3.0
+        );
+        assert_eq!(
+            distance_point_to_segment(egui::pos2(-3.0, 4.0), start, end),
+            5.0
+        );
+        assert_eq!(
+            distance_point_to_segment(egui::pos2(13.0, 4.0), start, end),
+            5.0
+        );
     }
 
     #[test]
