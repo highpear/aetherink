@@ -65,6 +65,7 @@ These do not all require immediate implementation, but clarifying them early sho
 - [ ] Decide how stroke smoothing should balance responsiveness and fidelity
 - [ ] Decide how overlay UI should appear in transparent mode
 - [x] Define the interaction model while click-through mode is active
+- [ ] Investigate canvas-only click-through while keeping overlay controls interactive
 - [ ] Decide how much platform-specific behavior should be normalized across Windows and macOS
 
 ---
@@ -124,6 +125,7 @@ Run these checks in order when validating the current overlay workflow on macOS.
 Useful after the core drawing workflow feels stable.
 
 - [x] Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
+- [ ] Toggle ink visibility without clearing strokes
 - [ ] Screenshot annotation mode
 - [x] Quick save directory setting for PNG export
 - [x] One-click quick save to the selected export directory
