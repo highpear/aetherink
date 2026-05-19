@@ -118,7 +118,7 @@ Overlay workflow
 - Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
 - Investigate Windows transparent window edge and shadow behavior in real usage
 - Review stroke rendering cost as stroke count grows
-- Add focused validation for drawing and overlay regressions
+- Extend validation around overlay regressions as platform behavior tightens
 
 ## Tech Stack
 
@@ -137,4 +137,10 @@ Run the app locally with:
 
 ```sh
 cargo run
+```
+
+Run the unit tests with:
+
+```sh
+cargo test
 ```
