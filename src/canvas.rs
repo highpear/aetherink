@@ -264,14 +264,31 @@ impl CanvasState {
     }
 
     pub fn render_image(&self) -> Result<RgbaImage, String> {
+        let (width, height) = self.canvas_image_size()?;
+        let background =
+            RgbaImage::from_pixel(width, height, rgba_from_color32(self.background_color()));
+
+        self.render_image_over_background(background)
+    }
+
+    pub fn render_image_over_background(&self, background: RgbaImage) -> Result<RgbaImage, String> {
         let Some(canvas_rect) = self.last_canvas_rect else {
             return Err(String::from("The canvas size is not available yet."));
         };
 
-        let width = canvas_rect.width().round().max(1.0) as u32;
-        let height = canvas_rect.height().round().max(1.0) as u32;
-        let mut image =
-            RgbaImage::from_pixel(width, height, rgba_from_color32(self.background_color()));
+        let expected_size = canvas_image_size_from_rect(canvas_rect);
+
+        if background.dimensions() != expected_size {
+            return Err(format!(
+                "Background image size does not match the canvas: expected {}x{}, got {}x{}.",
+                expected_size.0,
+                expected_size.1,
+                background.width(),
+                background.height()
+            ));
+        }
+
+        let mut image = background;
 
         if self.settings.ink_visible {
             for stroke in &self.strokes {
@@ -288,6 +305,14 @@ impl CanvasState {
         let viewport_inner_rect = ctx.input(|input| input.viewport().inner_rect)?;
 
         canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, ctx.pixels_per_point())
+    }
+
+    fn canvas_image_size(&self) -> Result<(u32, u32), String> {
+        let Some(canvas_rect) = self.last_canvas_rect else {
+            return Err(String::from("The canvas size is not available yet."));
+        };
+
+        Ok(canvas_image_size_from_rect(canvas_rect))
     }
 
     pub fn ui(&mut self, ui: &mut Ui, drawing_enabled: bool) -> Response {
@@ -527,6 +552,13 @@ fn blend_pixel(pixel: &mut Rgba<u8>, color: Color32) {
 fn rgba_from_color32(color: Color32) -> Rgba<u8> {
     let [red, green, blue, alpha] = color.to_array();
     Rgba([red, green, blue, alpha])
+}
+
+fn canvas_image_size_from_rect(canvas_rect: egui::Rect) -> (u32, u32) {
+    (
+        canvas_rect.width().round().max(1.0) as u32,
+        canvas_rect.height().round().max(1.0) as u32,
+    )
 }
 
 fn canvas_rect_to_screen_capture_rect(
@@ -1071,6 +1103,67 @@ mod tests {
         let image = canvas.render_image().expect("image render should succeed");
 
         assert_eq!(image.get_pixel(2, 1).0, [248, 246, 240, 255]);
+    }
+
+    #[test]
+    fn render_image_over_background_preserves_background_and_draws_visible_ink() {
+        let canvas = CanvasState {
+            strokes: vec![stroke(&[(1.0, 1.0), (3.0, 1.0)])],
+            last_canvas_rect: Some(egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(4.0, 4.0),
+            )),
+            ..Default::default()
+        };
+        let background = RgbaImage::from_pixel(4, 4, Rgba([10, 20, 30, 255]));
+
+        let image = canvas
+            .render_image_over_background(background)
+            .expect("background composition should succeed");
+
+        assert_eq!(image.get_pixel(3, 3).0, [10, 20, 30, 255]);
+        assert_eq!(image.get_pixel(2, 1).0, [0, 0, 0, 255]);
+    }
+
+    #[test]
+    fn render_image_over_background_respects_hidden_ink() {
+        let mut canvas = CanvasState {
+            strokes: vec![stroke(&[(1.0, 1.0), (3.0, 1.0)])],
+            last_canvas_rect: Some(egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(4.0, 4.0),
+            )),
+            ..Default::default()
+        };
+        canvas.set_ink_visible(false);
+        let background = RgbaImage::from_pixel(4, 4, Rgba([10, 20, 30, 255]));
+
+        let image = canvas
+            .render_image_over_background(background)
+            .expect("background composition should succeed");
+
+        assert_eq!(image.get_pixel(2, 1).0, [10, 20, 30, 255]);
+    }
+
+    #[test]
+    fn render_image_over_background_requires_matching_size() {
+        let canvas = CanvasState {
+            last_canvas_rect: Some(egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(4.0, 4.0),
+            )),
+            ..Default::default()
+        };
+        let background = RgbaImage::from_pixel(3, 4, Rgba([10, 20, 30, 255]));
+
+        let error = canvas
+            .render_image_over_background(background)
+            .expect_err("mismatched background size should fail");
+
+        assert_eq!(
+            error,
+            "Background image size does not match the canvas: expected 4x4, got 3x4."
+        );
     }
 
     #[test]
