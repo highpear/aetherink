@@ -29,6 +29,7 @@ Drawing
 - Clear canvas button
 - Save the current canvas as a PNG file
 - Quick save the current canvas as a PNG file
+- Copy the current canvas image to the clipboard
 - Keyboard shortcuts for undo and clear
 
 Canvas and window
@@ -60,8 +61,9 @@ Overlay workflow
 5. Open `Settings` to switch between white and transparent canvas modes and adjust overlay behavior.
 6. Enable `Always on top` when you want to keep the canvas above other windows.
 7. Use `Save PNG` to choose where to export the current canvas as a PNG file.
-8. Set a quick save folder in `Settings`, then use `Quick Save` to export without opening a save dialog.
-9. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
+8. Use `Copy Image` to copy the current canvas image to the clipboard.
+9. Set a quick save folder in `Settings`, then use `Quick Save` to export without opening a save dialog.
+10. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
 
 ## Shortcuts
 
@@ -90,6 +92,7 @@ Overlay workflow
 
 - `Save PNG` exports the current canvas area only, without the top bar or cursor preview.
 - `Quick Save` writes a timestamped PNG to the selected quick save folder without opening a dialog.
+- `Copy Image` copies the same canvas-only image to the system clipboard.
 - The PNG background follows the current canvas background setting, including transparent canvas opacity.
 - The save dialog suggests a timestamped name such as `aetherink-canvas-20260418-173015.png`.
 - If you omit the file extension when saving, AetherInk automatically appends `.png`.

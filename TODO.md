@@ -22,6 +22,7 @@ Drawing currently available:
 - [x] Clear canvas
 - [x] Save drawing as PNG
 - [x] Quick save drawing as PNG
+- [x] Copy drawing image to clipboard
 - [x] Keyboard shortcuts for undo and clear
 
 Canvas and window controls currently available:

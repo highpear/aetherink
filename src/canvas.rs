@@ -229,6 +229,14 @@ impl CanvasState {
     }
 
     pub fn export_png(&self, path: &Path) -> Result<(), String> {
+        let image = self.render_image()?;
+
+        image
+            .save(path)
+            .map_err(|error| format!("Failed to save PNG: {error}"))
+    }
+
+    pub fn render_image(&self) -> Result<RgbaImage, String> {
         let Some(canvas_rect) = self.last_canvas_rect else {
             return Err(String::from("The canvas size is not available yet."));
         };
@@ -242,9 +250,7 @@ impl CanvasState {
             draw_stroke_on_image(&mut image, stroke, canvas_rect.min);
         }
 
-        image
-            .save(path)
-            .map_err(|error| format!("Failed to save PNG: {error}"))
+        Ok(image)
     }
 
     pub fn ui(&mut self, ui: &mut Ui, drawing_enabled: bool) -> Response {

@@ -5,15 +5,16 @@ mod ui;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use arboard::{Clipboard, ImageData};
 use chrono::Local;
 use eframe::egui;
 use rfd::FileDialog;
 
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
-    clear_button, drawing_mode_label, keyboard_shortcut_pressed, quick_save_button, redo_button,
-    save_png_button, show_pen_color_presets, show_pen_width_presets, top_bar_group_label,
-    undo_button,
+    clear_button, copy_image_button, drawing_mode_label, keyboard_shortcut_pressed,
+    quick_save_button, redo_button, save_png_button, show_pen_color_presets,
+    show_pen_width_presets, top_bar_group_label, undo_button,
 };
 use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
@@ -324,6 +325,18 @@ impl AetherInkApp {
         let has_strokes = self.canvas.has_strokes();
 
         if ui
+            .add_enabled(has_strokes, copy_image_button())
+            .on_hover_text(if has_strokes {
+                "Copy the current canvas image to the clipboard"
+            } else {
+                "Draw something on the canvas before copying an image"
+            })
+            .clicked()
+        {
+            self.start_clipboard_image_copy();
+        }
+
+        if ui
             .add_enabled(has_strokes, save_png_button())
             .on_hover_text(if has_strokes {
                 "Choose where to save the current canvas as a PNG file (Ctrl/Cmd+S)"
@@ -560,6 +573,25 @@ impl AetherInkApp {
         Ok(path)
     }
 
+    fn copy_canvas_image_to_clipboard(&mut self) -> Result<(), String> {
+        self.canvas.stop_drawing();
+
+        let image = self.canvas.render_image()?;
+        let width = image.width() as usize;
+        let height = image.height() as usize;
+        let bytes = image.into_raw();
+        let mut clipboard =
+            Clipboard::new().map_err(|error| format!("Failed to open clipboard: {error}"))?;
+
+        clipboard
+            .set_image(ImageData {
+                width,
+                height,
+                bytes: bytes.into(),
+            })
+            .map_err(|error| format!("Failed to copy image: {error}"))
+    }
+
     fn start_png_export(&mut self) {
         self.export_status = match self.save_canvas_png() {
             Ok(Some(path)) => Some(ExportStatus {
@@ -568,6 +600,21 @@ impl AetherInkApp {
                 visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
             }),
             Ok(None) => self.export_status.take(),
+            Err(error) => Some(ExportStatus {
+                kind: ExportStatusKind::Error,
+                message: error,
+                visible_until: Instant::now() + ERROR_TOAST_DURATION,
+            }),
+        };
+    }
+
+    fn start_clipboard_image_copy(&mut self) {
+        self.export_status = match self.copy_canvas_image_to_clipboard() {
+            Ok(()) => Some(ExportStatus {
+                kind: ExportStatusKind::Success,
+                message: String::from("Copied canvas image to clipboard."),
+                visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
+            }),
             Err(error) => Some(ExportStatus {
                 kind: ExportStatusKind::Error,
                 message: error,
