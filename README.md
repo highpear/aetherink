@@ -48,7 +48,7 @@ Canvas and window
 
 Overlay workflow
 
-- Click-through mode on Windows
+- Click-through mode on Windows and macOS
 - Overlay toggle shortcut while click-through is active
 - Temporary drawing while click-through is enabled
 - Floating overlay status while click-through is active
@@ -117,7 +117,7 @@ Overlay workflow
 
 ## Platform Notes
 
-- Windows currently has the most complete overlay workflow, including click-through mode and keyboard-driven return to drawing.
+- Windows and macOS support the main overlay workflow, including click-through mode and keyboard-driven return to drawing.
 - macOS click-through, temporary drawing, transparent window behavior, and persistence have been validated in real use.
 - Background PNG export is implemented on Windows and macOS. On macOS, AetherInk checks Screen Recording permission before capture and prompts for it when needed.
 - Click-through is intentionally kept disabled on platforms where shortcut monitoring is unavailable, because the app must always provide a reliable way to return from pointer passthrough.

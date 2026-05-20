@@ -128,7 +128,7 @@ Useful after the core drawing workflow feels stable.
 - [x] Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
 - [x] Toggle ink visibility without clearing strokes
 - [ ] Screenshot annotation mode
-- [ ] Define transparent canvas background PNG capture behavior
+- [x] Define transparent canvas background PNG capture behavior
 - [x] Investigate canvas rect to screen coordinate mapping while excluding the top bar
 - [x] Add a tested helper for mapping the canvas rect to screen pixels
 - [x] Add a shared image composition path for drawing ink over a captured background
