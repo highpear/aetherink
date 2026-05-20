@@ -129,7 +129,8 @@ Useful after the core drawing workflow feels stable.
 - [x] Toggle ink visibility without clearing strokes
 - [ ] Screenshot annotation mode
 - [ ] Define transparent canvas background PNG capture behavior
-- [ ] Investigate canvas rect to screen coordinate mapping while excluding the top bar
+- [x] Investigate canvas rect to screen coordinate mapping while excluding the top bar
+- [x] Add a tested helper for mapping the canvas rect to screen pixels
 - [ ] Prototype background PNG export for the transparent canvas area
 - [ ] Validate whether AetherInk strokes are captured twice on Windows and macOS
 - [x] Quick save directory setting for PNG export
