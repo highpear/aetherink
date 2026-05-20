@@ -53,6 +53,8 @@ pub struct CanvasSettings {
     pub background: CanvasBackground,
     pub transparent_background_opacity: f32,
     pub transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
+    #[serde(default = "default_ink_visible")]
+    pub ink_visible: bool,
     pub default_pen_color: [u8; 4],
     pub default_pen_width: f32,
     pub eraser_radius: f32,
@@ -64,11 +66,16 @@ impl Default for CanvasSettings {
             background: CanvasBackground::White,
             transparent_background_opacity: 0.0,
             transparent_canvas_border_visibility: TransparentCanvasBorderVisibility::NearEdges,
+            ink_visible: true,
             default_pen_color: egui::Color32::BLACK.to_array(),
             default_pen_width: 2.0,
             eraser_radius: DEFAULT_ERASER_RADIUS,
         }
     }
+}
+
+fn default_ink_visible() -> bool {
+    true
 }
 
 #[derive(Debug)]
@@ -183,6 +190,17 @@ impl CanvasState {
         }
     }
 
+    pub fn ink_visible(&self) -> bool {
+        self.settings.ink_visible
+    }
+
+    pub fn set_ink_visible(&mut self, visible: bool) {
+        if self.settings.ink_visible != visible {
+            self.stop_drawing();
+            self.settings.ink_visible = visible;
+        }
+    }
+
     pub fn transparent_background_opacity_mut(&mut self) -> &mut f32 {
         &mut self.settings.transparent_background_opacity
     }
@@ -246,8 +264,10 @@ impl CanvasState {
         let mut image =
             RgbaImage::from_pixel(width, height, rgba_from_color32(self.background_color()));
 
-        for stroke in &self.strokes {
-            draw_stroke_on_image(&mut image, stroke, canvas_rect.min);
+        if self.settings.ink_visible {
+            for stroke in &self.strokes {
+                draw_stroke_on_image(&mut image, stroke, canvas_rect.min);
+            }
         }
 
         Ok(image)
@@ -281,12 +301,14 @@ impl CanvasState {
             self.handle_pointer_input(&response);
         }
 
-        for stroke in &self.strokes {
-            draw_stroke(&painter, stroke);
-        }
+        if self.settings.ink_visible {
+            for stroke in &self.strokes {
+                draw_stroke(&painter, stroke);
+            }
 
-        if let Some(stroke) = &self.current_stroke {
-            draw_stroke(&painter, stroke);
+            if let Some(stroke) = &self.current_stroke {
+                draw_stroke(&painter, stroke);
+            }
         }
 
         draw_cursor_indicator(
@@ -956,6 +978,7 @@ mod tests {
             background: CanvasBackground::Transparent,
             transparent_background_opacity: 0.35,
             transparent_canvas_border_visibility: TransparentCanvasBorderVisibility::Always,
+            ink_visible: false,
             default_pen_color: Color32::from_rgb(37, 99, 235).to_array(),
             default_pen_width: 12.0,
             eraser_radius: 20.0,
@@ -970,9 +993,36 @@ mod tests {
             canvas.transparent_canvas_border_visibility(),
             TransparentCanvasBorderVisibility::Always
         );
+        assert!(!canvas.ink_visible());
         assert_eq!(*canvas.current_color_mut(), Color32::from_rgb(37, 99, 235));
         assert_eq!(*canvas.current_width_mut(), 12.0);
         assert_eq!(*canvas.eraser_radius_mut(), 20.0);
+    }
+
+    #[test]
+    fn ink_visibility_is_saved_in_settings() {
+        let mut canvas = CanvasState::default();
+
+        canvas.set_ink_visible(false);
+
+        assert!(!canvas.settings().ink_visible);
+    }
+
+    #[test]
+    fn hidden_ink_is_omitted_from_rendered_image() {
+        let mut canvas = CanvasState {
+            strokes: vec![stroke(&[(1.0, 1.0), (3.0, 1.0)])],
+            last_canvas_rect: Some(egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(4.0, 4.0),
+            )),
+            ..Default::default()
+        };
+        canvas.set_ink_visible(false);
+
+        let image = canvas.render_image().expect("image render should succeed");
+
+        assert_eq!(image.get_pixel(2, 1).0, [248, 246, 240, 255]);
     }
 
     #[test]

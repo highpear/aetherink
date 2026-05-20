@@ -18,6 +18,10 @@ pub(crate) fn drawing_mode_label(drawing_enabled: bool) -> &'static str {
     }
 }
 
+pub(crate) fn ink_visibility_label(ink_visible: bool) -> &'static str {
+    if ink_visible { "Ink: On" } else { "Ink: Off" }
+}
+
 pub(crate) fn keyboard_shortcut_pressed(
     ctx: &egui::Context,
     key: egui::Key,

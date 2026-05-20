@@ -126,7 +126,7 @@ Run these checks in order when validating the current overlay workflow on macOS.
 Useful after the core drawing workflow feels stable.
 
 - [x] Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
-- [ ] Toggle ink visibility without clearing strokes
+- [x] Toggle ink visibility without clearing strokes
 - [ ] Screenshot annotation mode
 - [ ] Define transparent canvas background PNG capture behavior
 - [ ] Investigate canvas rect to screen coordinate mapping while excluding the top bar

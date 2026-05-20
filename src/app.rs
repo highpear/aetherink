@@ -12,9 +12,9 @@ use rfd::FileDialog;
 
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
-    clear_button, copy_image_button, drawing_mode_label, keyboard_shortcut_pressed,
-    quick_save_button, redo_button, save_png_button, show_pen_color_presets,
-    show_pen_width_presets, top_bar_group_label, undo_button,
+    clear_button, copy_image_button, drawing_mode_label, ink_visibility_label,
+    keyboard_shortcut_pressed, quick_save_button, redo_button, save_png_button,
+    show_pen_color_presets, show_pen_width_presets, top_bar_group_label, undo_button,
 };
 use crate::canvas::CanvasState;
 use crate::platform::ClickThroughController;
@@ -251,6 +251,7 @@ impl AetherInkApp {
         }
 
         self.show_drawing_mode_toggle(ui);
+        self.show_ink_visibility_toggle(ui);
 
         let can_undo = self.canvas.can_undo();
         let can_redo = self.canvas.can_redo();
@@ -316,6 +317,18 @@ impl AetherInkApp {
             .clicked()
         {
             self.set_drawing_enabled(!self.overlay.drawing_enabled);
+        }
+    }
+
+    fn show_ink_visibility_toggle(&mut self, ui: &mut egui::Ui) {
+        let ink_visible = self.canvas.ink_visible();
+
+        if ui
+            .selectable_label(ink_visible, ink_visibility_label(ink_visible))
+            .on_hover_text("Show or hide ink without clearing strokes")
+            .clicked()
+        {
+            self.canvas.set_ink_visible(!ink_visible);
         }
     }
 
