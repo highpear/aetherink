@@ -5,10 +5,16 @@ pub mod windows;
 pub mod macos;
 
 #[cfg(target_os = "windows")]
-pub use windows::ClickThroughController;
+pub use windows::{BackgroundCaptureController, ClickThroughController};
 
 #[cfg(target_os = "macos")]
-pub use macos::ClickThroughController;
+pub use macos::{BackgroundCaptureController, ClickThroughController};
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+use image::RgbaImage;
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+use crate::canvas::ScreenCaptureRect;
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 #[derive(Debug, Default)]
@@ -34,5 +40,22 @@ impl ClickThroughController {
 
     pub fn is_temporary_drawing_active(&self) -> bool {
         false
+    }
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[derive(Debug, Default)]
+pub struct BackgroundCaptureController;
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+impl BackgroundCaptureController {
+    pub fn supports_background_capture(&self) -> bool {
+        false
+    }
+
+    pub fn capture_background(&self, _rect: ScreenCaptureRect) -> Result<RgbaImage, String> {
+        Err(String::from(
+            "Background capture is not implemented for this platform.",
+        ))
     }
 }

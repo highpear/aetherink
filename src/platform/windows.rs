@@ -1,5 +1,9 @@
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_SHIFT};
 
+use image::RgbaImage;
+
+use crate::canvas::ScreenCaptureRect;
+
 const OVERLAY_TOGGLE_SHORTCUT_KEY: i32 = 'O' as i32;
 const TEMPORARY_DRAWING_KEY: i32 = VK_SHIFT as i32;
 
@@ -39,4 +43,19 @@ impl ClickThroughController {
 
 fn is_virtual_key_pressed(virtual_key: i32) -> bool {
     unsafe { (GetAsyncKeyState(virtual_key) as u16 & 0x8000) != 0 }
+}
+
+#[derive(Debug, Default)]
+pub struct BackgroundCaptureController;
+
+impl BackgroundCaptureController {
+    pub fn supports_background_capture(&self) -> bool {
+        false
+    }
+
+    pub fn capture_background(&self, _rect: ScreenCaptureRect) -> Result<RgbaImage, String> {
+        Err(String::from(
+            "Background capture is not implemented on Windows yet.",
+        ))
+    }
 }

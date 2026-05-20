@@ -17,7 +17,7 @@ use self::ui::{
     show_pen_color_presets, show_pen_width_presets, top_bar_group_label, undo_button,
 };
 use crate::canvas::CanvasState;
-use crate::platform::ClickThroughController;
+use crate::platform::{BackgroundCaptureController, ClickThroughController};
 use crate::stroke::Tool;
 
 const APP_SETTINGS_KEY: &str = "app_settings";
@@ -47,6 +47,7 @@ pub struct AetherInkApp {
     export_status: Option<ExportStatus>,
     temporary_drawing_active: bool,
     click_through_controller: ClickThroughController,
+    background_capture_controller: BackgroundCaptureController,
 }
 
 impl eframe::App for AetherInkApp {
@@ -603,6 +604,31 @@ impl AetherInkApp {
                 bytes: bytes.into(),
             })
             .map_err(|error| format!("Failed to copy image: {error}"))
+    }
+
+    #[allow(dead_code)]
+    fn render_canvas_with_captured_background(
+        &mut self,
+        ctx: &egui::Context,
+    ) -> Result<image::RgbaImage, String> {
+        self.canvas.stop_drawing();
+
+        if !self
+            .background_capture_controller
+            .supports_background_capture()
+        {
+            return Err(String::from("Background capture is not available yet."));
+        }
+
+        let capture_rect = self
+            .canvas
+            .screen_capture_rect(ctx)
+            .ok_or_else(|| String::from("The canvas screen position is not available yet."))?;
+        let background = self
+            .background_capture_controller
+            .capture_background(capture_rect)?;
+
+        self.canvas.render_image_over_background(background)
     }
 
     fn start_png_export(&mut self) {

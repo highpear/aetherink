@@ -5,6 +5,10 @@ const MACOS_KEY_CODE_RIGHT_SHIFT: u16 = 0x3C;
 const MACOS_KEY_CODE_LEFT_CONTROL: u16 = 0x3B;
 const MACOS_KEY_CODE_RIGHT_CONTROL: u16 = 0x3E;
 
+use image::RgbaImage;
+
+use crate::canvas::ScreenCaptureRect;
+
 #[link(name = "CoreGraphics", kind = "framework")]
 unsafe extern "C" {
     fn CGEventSourceKeyState(state_id: i32, key: u16) -> bool;
@@ -53,4 +57,19 @@ fn is_shift_pressed() -> bool {
 
 fn is_key_pressed(key_code: u16) -> bool {
     unsafe { CGEventSourceKeyState(CG_EVENT_SOURCE_STATE_COMBINED_SESSION_STATE, key_code) }
+}
+
+#[derive(Debug, Default)]
+pub struct BackgroundCaptureController;
+
+impl BackgroundCaptureController {
+    pub fn supports_background_capture(&self) -> bool {
+        false
+    }
+
+    pub fn capture_background(&self, _rect: ScreenCaptureRect) -> Result<RgbaImage, String> {
+        Err(String::from(
+            "Background capture is not implemented on macOS yet.",
+        ))
+    }
 }
