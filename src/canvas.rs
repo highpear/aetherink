@@ -307,6 +307,55 @@ impl CanvasState {
         canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, ctx.pixels_per_point())
     }
 
+    pub fn render_image_over_screen_background(
+        &self,
+        background: RgbaImage,
+        ctx: &egui::Context,
+    ) -> Result<RgbaImage, String> {
+        let Some(canvas_rect) = self.last_canvas_rect else {
+            return Err(String::from("The canvas size is not available yet."));
+        };
+        let Some(viewport_inner_rect) = ctx.input(|input| input.viewport().inner_rect) else {
+            return Err(String::from(
+                "The canvas screen position is not available yet.",
+            ));
+        };
+        let pixels_per_point = ctx.pixels_per_point();
+        let Some(capture_rect) =
+            canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, pixels_per_point)
+        else {
+            return Err(String::from(
+                "The canvas screen scale is not available yet.",
+            ));
+        };
+
+        if background.dimensions() != (capture_rect.width, capture_rect.height) {
+            return Err(format!(
+                "Background image size does not match the screen capture: expected {}x{}, got {}x{}.",
+                capture_rect.width,
+                capture_rect.height,
+                background.width(),
+                background.height()
+            ));
+        }
+
+        let mut image = background;
+
+        if self.settings.ink_visible {
+            for stroke in &self.strokes {
+                draw_screen_stroke_on_image(
+                    &mut image,
+                    stroke,
+                    viewport_inner_rect.min,
+                    capture_rect,
+                    pixels_per_point,
+                );
+            }
+        }
+
+        Ok(image)
+    }
+
     fn canvas_image_size(&self) -> Result<(u32, u32), String> {
         let Some(canvas_rect) = self.last_canvas_rect else {
             return Err(String::from("The canvas size is not available yet."));
@@ -316,6 +365,19 @@ impl CanvasState {
     }
 
     pub fn ui(&mut self, ui: &mut Ui, drawing_enabled: bool) -> Response {
+        self.ui_with_ink_visibility(ui, drawing_enabled, self.settings.ink_visible)
+    }
+
+    pub fn ui_without_ink(&mut self, ui: &mut Ui, drawing_enabled: bool) -> Response {
+        self.ui_with_ink_visibility(ui, drawing_enabled, false)
+    }
+
+    fn ui_with_ink_visibility(
+        &mut self,
+        ui: &mut Ui,
+        drawing_enabled: bool,
+        ink_visible: bool,
+    ) -> Response {
         let available_size = ui.available_size();
         let sense = if drawing_enabled {
             Sense::drag()
@@ -343,7 +405,7 @@ impl CanvasState {
             self.handle_pointer_input(&response);
         }
 
-        if self.settings.ink_visible {
+        if ink_visible {
             for stroke in &self.strokes {
                 draw_stroke(&painter, stroke);
             }
@@ -465,6 +527,53 @@ fn draw_stroke_on_image(image: &mut RgbaImage, stroke: &DrawStroke, origin: egui
         let end = points[1] - origin.to_vec2();
         draw_segment_on_image(image, start, end, stroke.width, stroke.color);
     }
+}
+
+fn draw_screen_stroke_on_image(
+    image: &mut RgbaImage,
+    stroke: &DrawStroke,
+    viewport_inner_origin: egui::Pos2,
+    capture_rect: ScreenCaptureRect,
+    pixels_per_point: f32,
+) {
+    let capture_origin = egui::pos2(capture_rect.x as f32, capture_rect.y as f32);
+
+    for points in stroke.points.windows(2) {
+        let start = screen_point_to_capture_image_point(
+            points[0],
+            viewport_inner_origin,
+            capture_origin,
+            pixels_per_point,
+        );
+        let end = screen_point_to_capture_image_point(
+            points[1],
+            viewport_inner_origin,
+            capture_origin,
+            pixels_per_point,
+        );
+
+        draw_segment_on_image(
+            image,
+            start,
+            end,
+            stroke.width * pixels_per_point,
+            stroke.color,
+        );
+    }
+}
+
+fn screen_point_to_capture_image_point(
+    point: egui::Pos2,
+    viewport_inner_origin: egui::Pos2,
+    capture_origin: egui::Pos2,
+    pixels_per_point: f32,
+) -> egui::Pos2 {
+    let screen_point = viewport_inner_origin + point.to_vec2();
+
+    egui::pos2(
+        screen_point.x * pixels_per_point - capture_origin.x,
+        screen_point.y * pixels_per_point - capture_origin.y,
+    )
 }
 
 fn draw_segment_on_image(
@@ -1164,6 +1273,30 @@ mod tests {
             error,
             "Background image size does not match the canvas: expected 4x4, got 3x4."
         );
+    }
+
+    #[test]
+    fn screen_point_to_capture_image_point_accounts_for_scale_and_outward_rounding() {
+        let point = screen_point_to_capture_image_point(
+            egui::pos2(10.25, 20.25),
+            egui::pos2(-4.5, 5.25),
+            egui::pos2(8.0, 38.0),
+            1.5,
+        );
+
+        assert_pos2_approx_eq(point, egui::pos2(0.625, 0.25));
+    }
+
+    #[test]
+    fn screen_point_to_capture_image_point_maps_canvas_end_into_capture_space() {
+        let point = screen_point_to_capture_image_point(
+            egui::pos2(30.5, 40.5),
+            egui::pos2(-4.5, 5.25),
+            egui::pos2(8.0, 38.0),
+            1.5,
+        );
+
+        assert_pos2_approx_eq(point, egui::pos2(31.0, 30.625));
     }
 
     #[test]

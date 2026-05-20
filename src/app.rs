@@ -13,10 +13,11 @@ use rfd::FileDialog;
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
     clear_button, copy_image_button, drawing_mode_label, ink_visibility_label,
-    keyboard_shortcut_pressed, quick_save_button, redo_button, save_png_button,
-    show_pen_color_presets, show_pen_width_presets, top_bar_group_label, undo_button,
+    keyboard_shortcut_pressed, quick_save_button, redo_button, save_background_png_button,
+    save_png_button, show_pen_color_presets, show_pen_width_presets, top_bar_group_label,
+    undo_button,
 };
-use crate::canvas::CanvasState;
+use crate::canvas::{CanvasBackground, CanvasState};
 use crate::platform::{BackgroundCaptureController, ClickThroughController};
 use crate::stroke::Tool;
 
@@ -38,6 +39,12 @@ struct ExportStatus {
     visible_until: Instant,
 }
 
+#[derive(Debug, Clone)]
+struct PendingBackgroundPngExport {
+    path: PathBuf,
+    capture_ready: bool,
+}
+
 #[derive(Debug, Default)]
 pub struct AetherInkApp {
     canvas: CanvasState,
@@ -48,10 +55,12 @@ pub struct AetherInkApp {
     temporary_drawing_active: bool,
     click_through_controller: ClickThroughController,
     background_capture_controller: BackgroundCaptureController,
+    pending_background_png_export: Option<PendingBackgroundPngExport>,
 }
 
 impl eframe::App for AetherInkApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.capture_pending_background_png_export(ctx);
         self.sync_overlay_state(ctx);
 
         if keyboard_shortcut_pressed(ctx, egui::Key::Z, false) {
@@ -90,9 +99,14 @@ impl eframe::App for AetherInkApp {
                     ui.label("Drawing paused. Enable Draw to edit the canvas.");
                 }
 
-                self.canvas.ui(ui, self.overlay.drawing_enabled);
+                if self.should_hide_ink_for_background_capture() {
+                    self.canvas.ui_without_ink(ui, self.overlay.drawing_enabled);
+                } else {
+                    self.canvas.ui(ui, self.overlay.drawing_enabled);
+                }
             });
 
+        self.mark_pending_background_png_export_ready(ctx);
         self.show_overlay_status_banner(ctx);
         self.show_export_toast(ctx);
         self.schedule_repaint(ctx);
@@ -362,6 +376,23 @@ impl AetherInkApp {
             self.start_png_export();
         }
 
+        let is_transparent_canvas = self.canvas.background() == CanvasBackground::Transparent;
+        let supports_background_capture = self
+            .background_capture_controller
+            .supports_background_capture();
+        let can_save_background_png = is_transparent_canvas && supports_background_capture;
+
+        if ui
+            .add_enabled(can_save_background_png, save_background_png_button())
+            .on_hover_text(background_png_button_hover_text(
+                is_transparent_canvas,
+                supports_background_capture,
+            ))
+            .clicked()
+        {
+            self.start_captured_background_png_export();
+        }
+
         let can_quick_save = has_strokes && self.last_export_directory.is_some();
 
         if ui
@@ -534,6 +565,10 @@ impl AetherInkApp {
             ctx.request_repaint_after(CLICK_THROUGH_POLL_INTERVAL);
         }
 
+        if self.pending_background_png_export.is_some() {
+            ctx.request_repaint();
+        }
+
         if let Some(status) = &self.export_status {
             let remaining = status
                 .visible_until
@@ -563,6 +598,31 @@ impl AetherInkApp {
         self.canvas.export_png(&path)?;
 
         Ok(Some(path))
+    }
+
+    fn begin_canvas_with_captured_background_png_export(&mut self) -> Result<bool, String> {
+        let mut file_dialog = FileDialog::new()
+            .add_filter("PNG image", &["png"])
+            .set_file_name(background_export_file_name());
+
+        if let Some(directory) = &self.last_export_directory {
+            file_dialog = file_dialog.set_directory(directory);
+        }
+
+        let Some(path) = file_dialog.save_file() else {
+            return Ok(false);
+        };
+        let path = ensure_png_extension(&path);
+
+        self.last_export_directory = path.parent().map(Path::to_path_buf);
+
+        self.canvas.stop_drawing();
+        self.pending_background_png_export = Some(PendingBackgroundPngExport {
+            path,
+            capture_ready: false,
+        });
+
+        Ok(true)
     }
 
     fn quick_save_canvas_png(&mut self) -> Result<PathBuf, String> {
@@ -606,7 +666,6 @@ impl AetherInkApp {
             .map_err(|error| format!("Failed to copy image: {error}"))
     }
 
-    #[allow(dead_code)]
     fn render_canvas_with_captured_background(
         &mut self,
         ctx: &egui::Context,
@@ -628,7 +687,58 @@ impl AetherInkApp {
             .background_capture_controller
             .capture_background(capture_rect)?;
 
-        self.canvas.render_image_over_background(background)
+        self.canvas
+            .render_image_over_screen_background(background, ctx)
+    }
+
+    fn should_hide_ink_for_background_capture(&self) -> bool {
+        self.pending_background_png_export.is_some()
+    }
+
+    fn mark_pending_background_png_export_ready(&mut self, ctx: &egui::Context) {
+        if let Some(pending_export) = &mut self.pending_background_png_export
+            && !pending_export.capture_ready
+        {
+            pending_export.capture_ready = true;
+            ctx.request_repaint();
+        }
+    }
+
+    fn capture_pending_background_png_export(&mut self, ctx: &egui::Context) {
+        let Some(pending_export) = &self.pending_background_png_export else {
+            return;
+        };
+
+        if !pending_export.capture_ready {
+            return;
+        }
+
+        let path = pending_export.path.clone();
+        self.pending_background_png_export = None;
+
+        self.export_status = match self.save_captured_background_png(ctx, &path) {
+            Ok(()) => Some(ExportStatus {
+                kind: ExportStatusKind::Success,
+                message: format!("Saved background PNG: {}", path.display()),
+                visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
+            }),
+            Err(error) => Some(ExportStatus {
+                kind: ExportStatusKind::Error,
+                message: error,
+                visible_until: Instant::now() + ERROR_TOAST_DURATION,
+            }),
+        };
+    }
+
+    fn save_captured_background_png(
+        &mut self,
+        ctx: &egui::Context,
+        path: &Path,
+    ) -> Result<(), String> {
+        let image = self.render_canvas_with_captured_background(ctx)?;
+        image
+            .save(path)
+            .map_err(|error| format!("Failed to save PNG: {error}"))
     }
 
     fn start_png_export(&mut self) {
@@ -662,6 +772,18 @@ impl AetherInkApp {
         };
     }
 
+    fn start_captured_background_png_export(&mut self) {
+        self.export_status = match self.begin_canvas_with_captured_background_png_export() {
+            Ok(true) => self.export_status.take(),
+            Ok(false) => self.export_status.take(),
+            Err(error) => Some(ExportStatus {
+                kind: ExportStatusKind::Error,
+                message: error,
+                visible_until: Instant::now() + ERROR_TOAST_DURATION,
+            }),
+        };
+    }
+
     fn start_quick_png_export(&mut self) {
         self.export_status = match self.quick_save_canvas_png() {
             Ok(path) => Some(ExportStatus {
@@ -682,6 +804,28 @@ fn export_file_name() -> String {
     let timestamp = Local::now();
 
     format!("aetherink-canvas-{}.png", timestamp.format("%Y%m%d-%H%M%S"))
+}
+
+fn background_export_file_name() -> String {
+    let timestamp = Local::now();
+
+    format!(
+        "aetherink-background-{}.png",
+        timestamp.format("%Y%m%d-%H%M%S")
+    )
+}
+
+fn background_png_button_hover_text(
+    is_transparent_canvas: bool,
+    supports_background_capture: bool,
+) -> &'static str {
+    if !is_transparent_canvas {
+        "Switch the canvas background to Transparent before saving a background PNG"
+    } else if !supports_background_capture {
+        "Background PNG export is not available on this platform yet"
+    } else {
+        "Save the transparent canvas area with the screen background behind it"
+    }
 }
 
 fn ensure_png_extension(path: &Path) -> PathBuf {
@@ -722,6 +866,30 @@ mod tests {
         assert_eq!(
             ensure_png_extension(Path::new("drawing.PNG")),
             PathBuf::from("drawing.PNG")
+        );
+    }
+
+    #[test]
+    fn background_png_hover_text_requires_transparent_canvas() {
+        assert_eq!(
+            background_png_button_hover_text(false, true),
+            "Switch the canvas background to Transparent before saving a background PNG"
+        );
+    }
+
+    #[test]
+    fn background_png_hover_text_reports_unsupported_platform() {
+        assert_eq!(
+            background_png_button_hover_text(true, false),
+            "Background PNG export is not available on this platform yet"
+        );
+    }
+
+    #[test]
+    fn background_png_hover_text_describes_available_export() {
+        assert_eq!(
+            background_png_button_hover_text(true, true),
+            "Save the transparent canvas area with the screen background behind it"
         );
     }
 }
