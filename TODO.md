@@ -128,9 +128,12 @@ Useful after the core drawing workflow feels stable.
 - [x] Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
 - [ ] Toggle ink visibility without clearing strokes
 - [ ] Screenshot annotation mode
+- [ ] Define transparent canvas background PNG capture behavior
+- [ ] Investigate canvas rect to screen coordinate mapping while excluding the top bar
+- [ ] Prototype background PNG export for the transparent canvas area
+- [ ] Validate whether AetherInk strokes are captured twice on Windows and macOS
 - [x] Quick save directory setting for PNG export
 - [x] One-click quick save to the selected export directory
-- [ ] Investigate Windows background capture for transparent PNG export
 - [ ] Quick global shortcut to show or hide the overlay
 - [ ] Export stroke data
 
