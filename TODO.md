@@ -133,6 +133,7 @@ Useful after the core drawing workflow feels stable.
 - [x] Add a tested helper for mapping the canvas rect to screen pixels
 - [x] Add a shared image composition path for drawing ink over a captured background
 - [x] Add the app and platform call path for future background capture
+- [x] Add an initial Windows screen-region capture backend
 - [ ] Prototype background PNG export for the transparent canvas area
 - [ ] Validate whether AetherInk strokes are captured twice on Windows and macOS
 - [x] Quick save directory setting for PNG export
