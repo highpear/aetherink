@@ -78,7 +78,7 @@ The overlay foundation exists, but platform behavior still needs tightening.
 - [x] Verify macOS transparent window behavior in real usage
 - [x] Verify macOS always-on-top / floating behavior in real usage
 - [x] Keep click-through disabled if reliable shortcut monitoring is unavailable
-- [ ] Investigate Windows transparent window edge / shadow visibility in real usage
+- [x] Investigate Windows transparent window edge / shadow visibility in real usage
 - [x] Define fallback behavior if global shortcut monitoring is unavailable
 - [x] Review whether overlay status messaging should be visible outside the top bar
 
@@ -157,7 +157,7 @@ Keep changes incremental and measurable.
 ## Release Preparation
 
 - [ ] App icon
-- [ ] Windows build validation
+- [x] Windows build validation
 - [ ] macOS build validation
 - [x] README usage notes for overlay features
 - [ ] First packaged release
