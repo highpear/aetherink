@@ -10,6 +10,7 @@ use windows_sys::Win32::Graphics::Gdi::{
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_SHIFT};
 
 use crate::canvas::ScreenCaptureRect;
+use crate::platform::BackgroundCaptureAvailability;
 
 const OVERLAY_TOGGLE_SHORTCUT_KEY: i32 = 'O' as i32;
 const TEMPORARY_DRAWING_KEY: i32 = VK_SHIFT as i32;
@@ -62,6 +63,14 @@ impl BackgroundCaptureController {
 
     pub fn supports_background_capture(&self) -> bool {
         true
+    }
+
+    pub fn background_capture_availability(&self) -> BackgroundCaptureAvailability {
+        BackgroundCaptureAvailability::Available
+    }
+
+    pub fn request_background_capture_permission(&self) -> Result<bool, String> {
+        Ok(true)
     }
 
     pub fn capture_background(&self, rect: ScreenCaptureRect) -> Result<RgbaImage, String> {

@@ -5,6 +5,7 @@ use image::RgbaImage;
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 
 use crate::canvas::ScreenCaptureRect;
+use crate::platform::BackgroundCaptureAvailability;
 
 type CFAllocatorRef = *const c_void;
 type CFStringRef = *const c_void;
@@ -162,6 +163,30 @@ impl BackgroundCaptureController {
         self.window_id.is_some()
     }
 
+    pub fn background_capture_availability(&self) -> BackgroundCaptureAvailability {
+        if self.window_id.is_none() {
+            BackgroundCaptureAvailability::Unsupported
+        } else if has_screen_capture_access() {
+            BackgroundCaptureAvailability::Available
+        } else {
+            BackgroundCaptureAvailability::PermissionRequired
+        }
+    }
+
+    pub fn request_background_capture_permission(&self) -> Result<bool, String> {
+        if self.window_id.is_none() {
+            return Err(String::from(
+                "The AetherInk window id is not available for background capture.",
+            ));
+        }
+
+        if has_screen_capture_access() {
+            return Ok(true);
+        }
+
+        Ok(unsafe { CGRequestScreenCaptureAccess() })
+    }
+
     pub fn capture_background(&self, rect: ScreenCaptureRect) -> Result<RgbaImage, String> {
         let Some(window_id) = self.window_id else {
             return Err(String::from(
@@ -212,17 +237,17 @@ fn capture_screen_rect_below_window(
 }
 
 fn ensure_screen_capture_access() -> Result<(), String> {
-    if unsafe { CGPreflightScreenCaptureAccess() } {
-        return Ok(());
-    }
-
-    if unsafe { CGRequestScreenCaptureAccess() } {
+    if has_screen_capture_access() {
         return Ok(());
     }
 
     Err(String::from(
-        "macOS Screen Recording permission is required to capture windows behind AetherInk. Grant it in System Settings, then restart AetherInk.",
+        "macOS Screen Recording permission is required to capture windows behind AetherInk.",
     ))
+}
+
+fn has_screen_capture_access() -> bool {
+    unsafe { CGPreflightScreenCaptureAccess() }
 }
 
 fn window_id_from_creation_context(cc: &eframe::CreationContext<'_>) -> Result<CGWindowID, String> {

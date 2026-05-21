@@ -119,7 +119,7 @@ Overlay workflow
 
 - Windows currently has the most complete overlay workflow, including click-through mode and keyboard-driven return to drawing.
 - macOS click-through, temporary drawing, transparent window behavior, and persistence have been validated in real use.
-- Background PNG export is implemented on Windows and macOS. macOS requires Screen Recording permission to include other apps behind AetherInk.
+- Background PNG export is implemented on Windows and macOS. On macOS, AetherInk checks Screen Recording permission before capture and prompts for it when needed.
 - Click-through is intentionally kept disabled on platforms where shortcut monitoring is unavailable, because the app must always provide a reliable way to return from pointer passthrough.
 - The project is intentionally keeping the feature set small until the base drawing and overlay interactions feel reliable.
 

@@ -18,7 +18,9 @@ use self::ui::{
     undo_button,
 };
 use crate::canvas::{CanvasBackground, CanvasState};
-use crate::platform::{BackgroundCaptureController, ClickThroughController};
+use crate::platform::{
+    BackgroundCaptureAvailability, BackgroundCaptureController, ClickThroughController,
+};
 use crate::stroke::Tool;
 
 const APP_SETTINGS_KEY: &str = "app_settings";
@@ -57,6 +59,7 @@ pub struct AetherInkApp {
     temporary_drawing_active: bool,
     click_through_controller: ClickThroughController,
     background_capture_controller: BackgroundCaptureController,
+    background_capture_availability: BackgroundCaptureAvailability,
     pending_background_png_export: Option<PendingBackgroundPngExport>,
 }
 
@@ -127,6 +130,7 @@ impl AetherInkApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut app = Self::default();
         app.background_capture_controller = BackgroundCaptureController::new(cc);
+        app.refresh_background_capture_availability();
 
         if let Some(storage) = cc.storage
             && let Some(settings) = eframe::get_value(storage, APP_SETTINGS_KEY)
@@ -380,16 +384,15 @@ impl AetherInkApp {
         }
 
         let is_transparent_canvas = self.canvas.background() == CanvasBackground::Transparent;
-        let supports_background_capture = self
-            .background_capture_controller
-            .supports_background_capture();
-        let can_save_background_png = is_transparent_canvas && supports_background_capture;
+        let background_capture_availability = self.background_capture_availability;
+        let can_save_background_png = is_transparent_canvas
+            && background_capture_availability != BackgroundCaptureAvailability::Unsupported;
 
         if ui
             .add_enabled(can_save_background_png, save_background_png_button())
             .on_hover_text(background_png_button_hover_text(
                 is_transparent_canvas,
-                supports_background_capture,
+                background_capture_availability,
             ))
             .clicked()
         {
@@ -793,6 +796,14 @@ impl AetherInkApp {
     }
 
     fn start_captured_background_png_export(&mut self) {
+        self.refresh_background_capture_availability();
+
+        if self.background_capture_availability == BackgroundCaptureAvailability::PermissionRequired
+        {
+            self.request_background_capture_permission();
+            return;
+        }
+
         self.export_status = match self.begin_canvas_with_captured_background_png_export() {
             Ok(true) => self.export_status.take(),
             Ok(false) => self.export_status.take(),
@@ -811,6 +822,45 @@ impl AetherInkApp {
                 message: format!("Quick saved PNG: {}", path.display()),
                 visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
             }),
+            Err(error) => Some(ExportStatus {
+                kind: ExportStatusKind::Error,
+                message: error,
+                visible_until: Instant::now() + ERROR_TOAST_DURATION,
+            }),
+        };
+    }
+
+    fn refresh_background_capture_availability(&mut self) {
+        self.background_capture_availability = self
+            .background_capture_controller
+            .background_capture_availability();
+    }
+
+    fn request_background_capture_permission(&mut self) {
+        self.export_status = match self
+            .background_capture_controller
+            .request_background_capture_permission()
+        {
+            Ok(true) => {
+                self.refresh_background_capture_availability();
+                Some(ExportStatus {
+                    kind: ExportStatusKind::Success,
+                    message: String::from(
+                        "Screen Recording permission is available. Restart AetherInk if background capture still fails.",
+                    ),
+                    visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
+                })
+            }
+            Ok(false) => {
+                self.refresh_background_capture_availability();
+                Some(ExportStatus {
+                    kind: ExportStatusKind::Error,
+                    message: String::from(
+                        "Grant Screen Recording permission in System Settings, then restart AetherInk.",
+                    ),
+                    visible_until: Instant::now() + ERROR_TOAST_DURATION,
+                })
+            }
             Err(error) => Some(ExportStatus {
                 kind: ExportStatusKind::Error,
                 message: error,
@@ -837,12 +887,14 @@ fn background_export_file_name() -> String {
 
 fn background_png_button_hover_text(
     is_transparent_canvas: bool,
-    supports_background_capture: bool,
+    background_capture_availability: BackgroundCaptureAvailability,
 ) -> &'static str {
     if !is_transparent_canvas {
         "Switch the canvas background to Transparent before saving a background PNG"
-    } else if !supports_background_capture {
+    } else if background_capture_availability == BackgroundCaptureAvailability::Unsupported {
         "Background PNG export is not available on this platform yet"
+    } else if background_capture_availability == BackgroundCaptureAvailability::PermissionRequired {
+        "Screen Recording permission is required for background PNG export"
     } else {
         "Save the transparent canvas area with the screen background behind it"
     }
@@ -892,7 +944,7 @@ mod tests {
     #[test]
     fn background_png_hover_text_requires_transparent_canvas() {
         assert_eq!(
-            background_png_button_hover_text(false, true),
+            background_png_button_hover_text(false, BackgroundCaptureAvailability::Available),
             "Switch the canvas background to Transparent before saving a background PNG"
         );
     }
@@ -900,15 +952,26 @@ mod tests {
     #[test]
     fn background_png_hover_text_reports_unsupported_platform() {
         assert_eq!(
-            background_png_button_hover_text(true, false),
+            background_png_button_hover_text(true, BackgroundCaptureAvailability::Unsupported),
             "Background PNG export is not available on this platform yet"
+        );
+    }
+
+    #[test]
+    fn background_png_hover_text_reports_missing_permission() {
+        assert_eq!(
+            background_png_button_hover_text(
+                true,
+                BackgroundCaptureAvailability::PermissionRequired
+            ),
+            "Screen Recording permission is required for background PNG export"
         );
     }
 
     #[test]
     fn background_png_hover_text_describes_available_export() {
         assert_eq!(
-            background_png_button_hover_text(true, true),
+            background_png_button_hover_text(true, BackgroundCaptureAvailability::Available),
             "Save the transparent canvas area with the screen background behind it"
         );
     }

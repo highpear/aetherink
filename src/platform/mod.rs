@@ -10,6 +10,19 @@ pub use windows::{BackgroundCaptureController, ClickThroughController};
 #[cfg(target_os = "macos")]
 pub use macos::{BackgroundCaptureController, ClickThroughController};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackgroundCaptureAvailability {
+    Available,
+    PermissionRequired,
+    Unsupported,
+}
+
+impl Default for BackgroundCaptureAvailability {
+    fn default() -> Self {
+        Self::Unsupported
+    }
+}
+
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 use image::RgbaImage;
 
@@ -55,6 +68,16 @@ impl BackgroundCaptureController {
 
     pub fn supports_background_capture(&self) -> bool {
         false
+    }
+
+    pub fn background_capture_availability(&self) -> BackgroundCaptureAvailability {
+        BackgroundCaptureAvailability::Unsupported
+    }
+
+    pub fn request_background_capture_permission(&self) -> Result<bool, String> {
+        Err(String::from(
+            "Background capture is not implemented for this platform.",
+        ))
     }
 
     pub fn capture_background(&self, _rect: ScreenCaptureRect) -> Result<RgbaImage, String> {
