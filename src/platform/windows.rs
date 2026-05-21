@@ -56,6 +56,10 @@ fn is_virtual_key_pressed(virtual_key: i32) -> bool {
 pub struct BackgroundCaptureController;
 
 impl BackgroundCaptureController {
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        Self
+    }
+
     pub fn supports_background_capture(&self) -> bool {
         true
     }

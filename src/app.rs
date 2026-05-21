@@ -23,6 +23,7 @@ use crate::stroke::Tool;
 
 const APP_SETTINGS_KEY: &str = "app_settings";
 const CLICK_THROUGH_POLL_INTERVAL: Duration = Duration::from_millis(16);
+const BACKGROUND_CAPTURE_DIALOG_DISMISS_DELAY: Duration = Duration::from_millis(400);
 const SUCCESS_TOAST_DURATION: Duration = Duration::from_secs(3);
 const ERROR_TOAST_DURATION: Duration = Duration::from_secs(5);
 
@@ -42,6 +43,7 @@ struct ExportStatus {
 #[derive(Debug, Clone)]
 struct PendingBackgroundPngExport {
     path: PathBuf,
+    capture_not_before: Instant,
     capture_ready: bool,
 }
 
@@ -124,6 +126,7 @@ impl eframe::App for AetherInkApp {
 impl AetherInkApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut app = Self::default();
+        app.background_capture_controller = BackgroundCaptureController::new(cc);
 
         if let Some(storage) = cc.storage
             && let Some(settings) = eframe::get_value(storage, APP_SETTINGS_KEY)
@@ -566,7 +569,17 @@ impl AetherInkApp {
         }
 
         if self.pending_background_png_export.is_some() {
-            ctx.request_repaint();
+            let repaint_after = self
+                .pending_background_png_export
+                .as_ref()
+                .map(|pending_export| {
+                    pending_export
+                        .capture_not_before
+                        .saturating_duration_since(Instant::now())
+                        .min(CLICK_THROUGH_POLL_INTERVAL)
+                })
+                .unwrap_or(CLICK_THROUGH_POLL_INTERVAL);
+            ctx.request_repaint_after(repaint_after);
         }
 
         if let Some(status) = &self.export_status {
@@ -619,6 +632,7 @@ impl AetherInkApp {
         self.canvas.stop_drawing();
         self.pending_background_png_export = Some(PendingBackgroundPngExport {
             path,
+            capture_not_before: Instant::now() + BACKGROUND_CAPTURE_DIALOG_DISMISS_DELAY,
             capture_ready: false,
         });
 
@@ -699,6 +713,12 @@ impl AetherInkApp {
         if let Some(pending_export) = &mut self.pending_background_png_export
             && !pending_export.capture_ready
         {
+            let now = Instant::now();
+            if now < pending_export.capture_not_before {
+                ctx.request_repaint_after(pending_export.capture_not_before - now);
+                return;
+            }
+
             pending_export.capture_ready = true;
             ctx.request_repaint();
         }

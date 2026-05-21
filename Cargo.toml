@@ -9,6 +9,7 @@ chrono = { version = "0.4.44", default-features = false, features = ["clock", "s
 eframe = { version = "0.33", features = ["persistence"] }
 egui = "0.33"
 image = { version = "0.25", default-features = false, features = ["png"] }
+raw-window-handle = "0.6"
 rfd = "0.15"
 serde = { version = "1", features = ["derive"] }
 

@@ -30,6 +30,7 @@ Drawing
 - Toggle ink visibility without clearing strokes
 - Save the current canvas as a PNG file
 - Quick save the current canvas as a PNG file
+- Save a transparent canvas PNG with the screen background behind it
 - Copy the current canvas image to the clipboard
 - Keyboard shortcuts for undo and clear
 
@@ -65,7 +66,8 @@ Overlay workflow
 8. Use `Save PNG` to choose where to export the current canvas as a PNG file.
 9. Use `Copy Image` to copy the current canvas image to the clipboard.
 10. Set a quick save folder in `Settings`, then use `Quick Save` to export without opening a save dialog.
-11. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
+11. In transparent canvas mode, use `Save Background PNG` to export your ink over the screen area behind the canvas.
+12. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
 
 ## Shortcuts
 
@@ -95,6 +97,7 @@ Overlay workflow
 - `Save PNG` exports the current canvas area only, without the top bar or cursor preview.
 - `Quick Save` writes a timestamped PNG to the selected quick save folder without opening a dialog.
 - `Copy Image` copies the same canvas-only image to the system clipboard.
+- `Save Background PNG` exports the transparent canvas area over the screen background behind AetherInk.
 - Hidden ink is omitted from PNG exports and clipboard image copies.
 - The PNG background follows the current canvas background setting, including transparent canvas opacity.
 - The save dialog suggests a timestamped name such as `aetherink-canvas-20260418-173015.png`.
@@ -116,6 +119,7 @@ Overlay workflow
 
 - Windows currently has the most complete overlay workflow, including click-through mode and keyboard-driven return to drawing.
 - macOS click-through, temporary drawing, transparent window behavior, and persistence have been validated in real use.
+- Background PNG export is implemented on Windows and macOS. macOS requires Screen Recording permission to include other apps behind AetherInk.
 - Click-through is intentionally kept disabled on platforms where shortcut monitoring is unavailable, because the app must always provide a reliable way to return from pointer passthrough.
 - The project is intentionally keeping the feature set small until the base drawing and overlay interactions feel reliable.
 

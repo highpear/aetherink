@@ -49,6 +49,10 @@ pub struct BackgroundCaptureController;
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 impl BackgroundCaptureController {
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        Self
+    }
+
     pub fn supports_background_capture(&self) -> bool {
         false
     }
