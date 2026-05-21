@@ -28,6 +28,8 @@ const CLICK_THROUGH_POLL_INTERVAL: Duration = Duration::from_millis(16);
 const BACKGROUND_CAPTURE_DIALOG_DISMISS_DELAY: Duration = Duration::from_millis(400);
 const SUCCESS_TOAST_DURATION: Duration = Duration::from_secs(3);
 const ERROR_TOAST_DURATION: Duration = Duration::from_secs(5);
+#[cfg(debug_assertions)]
+const DEBUG_BACKGROUND_CAPTURE_ENV: &str = "AETHERINK_DEBUG_BACKGROUND_CAPTURE";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ExportStatusKind {
@@ -686,6 +688,7 @@ impl AetherInkApp {
     fn render_canvas_with_captured_background(
         &mut self,
         ctx: &egui::Context,
+        export_path: &Path,
     ) -> Result<image::RgbaImage, String> {
         self.canvas.stop_drawing();
 
@@ -703,6 +706,9 @@ impl AetherInkApp {
         let background = self
             .background_capture_controller
             .capture_background(capture_rect)?;
+
+        #[cfg(debug_assertions)]
+        save_debug_background_capture(&background, export_path)?;
 
         self.canvas
             .render_image_over_screen_background(background, ctx)
@@ -758,7 +764,7 @@ impl AetherInkApp {
         ctx: &egui::Context,
         path: &Path,
     ) -> Result<(), String> {
-        let image = self.render_canvas_with_captured_background(ctx)?;
+        let image = self.render_canvas_with_captured_background(ctx, path)?;
         image
             .save(path)
             .map_err(|error| format!("Failed to save PNG: {error}"))
@@ -913,6 +919,35 @@ fn ensure_png_extension(path: &Path) -> PathBuf {
     }
 }
 
+#[cfg(debug_assertions)]
+fn save_debug_background_capture(
+    background: &image::RgbaImage,
+    export_path: &Path,
+) -> Result<(), String> {
+    if std::env::var_os(DEBUG_BACKGROUND_CAPTURE_ENV).is_none() {
+        return Ok(());
+    }
+
+    let path = debug_background_capture_path(export_path);
+    background
+        .save(&path)
+        .map_err(|error| format!("Failed to save debug background capture: {error}"))
+}
+
+#[cfg(debug_assertions)]
+fn debug_background_capture_path(export_path: &Path) -> PathBuf {
+    let file_name = export_path
+        .file_stem()
+        .and_then(|file_stem| file_stem.to_str())
+        .map(|file_stem| format!("{file_stem}-raw-background.png"))
+        .unwrap_or_else(|| String::from("aetherink-raw-background.png"));
+
+    export_path
+        .parent()
+        .map(|parent| parent.join(&file_name))
+        .unwrap_or_else(|| PathBuf::from(file_name))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -938,6 +973,15 @@ mod tests {
         assert_eq!(
             ensure_png_extension(Path::new("drawing.PNG")),
             PathBuf::from("drawing.PNG")
+        );
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn debug_background_capture_path_uses_export_directory_and_stem() {
+        assert_eq!(
+            debug_background_capture_path(Path::new("exports/aetherink-background-20260521.png")),
+            PathBuf::from("exports/aetherink-background-20260521-raw-background.png")
         );
     }
 
