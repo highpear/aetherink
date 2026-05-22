@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use egui::{Color32, CursorIcon, Response, Sense, Stroke, Ui};
+use egui::{Color32, CursorIcon, Response, Sense, Shape, Stroke, Ui};
 use image::{Rgba, RgbaImage};
 use serde::{Deserialize, Serialize};
 
@@ -513,11 +513,12 @@ impl CanvasState {
 }
 
 fn draw_stroke(painter: &egui::Painter, stroke: &DrawStroke) {
-    for points in stroke.points.windows(2) {
-        painter.line_segment(
-            [points[0], points[1]],
-            Stroke::new(stroke.width, stroke.color),
-        );
+    let line_stroke = Stroke::new(stroke.width, stroke.color);
+
+    if stroke.points.len() == 2 {
+        painter.line_segment([stroke.points[0], stroke.points[1]], line_stroke);
+    } else if stroke.points.len() > 2 {
+        painter.add(Shape::line(stroke.points.clone(), line_stroke));
     }
 }
 

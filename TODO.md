@@ -148,7 +148,7 @@ Useful after the core drawing workflow feels stable.
 
 Keep changes incremental and measurable.
 
-- [ ] Review stroke rendering cost as stroke count grows
+- [x] Review stroke rendering cost as stroke count grows
 - [x] Add focused unit validation for core drawing behavior
 - [ ] Add focused validation for overlay regressions
 
