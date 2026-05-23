@@ -153,3 +153,5 @@ Run the unit tests with:
 ```sh
 cargo test
 ```
+
+Release preparation is tracked separately in [RELEASE.md](RELEASE.md).
