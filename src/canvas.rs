@@ -1,6 +1,8 @@
 use std::path::Path;
 
 mod eraser;
+mod geometry;
+mod pen;
 mod raster;
 
 use egui::{Color32, CursorIcon, Response, Sense, Shape, Stroke, Ui};
@@ -8,19 +10,18 @@ use image::RgbaImage;
 use serde::{Deserialize, Serialize};
 
 use self::eraser::erase_from_strokes;
+use self::geometry::{
+    canvas_image_size_from_rect, canvas_rect_to_screen_capture_rect, is_near_canvas_edge,
+};
+use self::pen::push_pen_point_if_needed;
 use self::raster::{draw_screen_stroke_on_image, draw_stroke_on_image, rgba_from_color32};
 use crate::stroke::{DrawStroke, Tool};
 
 const DEFAULT_WHITE_BACKGROUND: Color32 = Color32::from_rgb(248, 246, 240);
 const TRANSPARENT_CANVAS_BORDER: Color32 = Color32::from_gray(180);
-const CANVAS_BORDER_HOVER_THRESHOLD: f32 = 24.0;
 const DEFAULT_ERASER_RADIUS: f32 = 8.0;
 const PEN_CURSOR_MIN_RADIUS: f32 = 2.0;
 const DISABLED_CURSOR_SIZE: f32 = 7.0;
-const PEN_POINT_MIN_DISTANCE: f32 = 1.0;
-const PEN_POINT_DISTANCE_PER_WIDTH: f32 = 0.35;
-const PEN_POINT_MAX_DISTANCE: f32 = 4.0;
-const PEN_DIRECTION_ALIGNMENT_THRESHOLD: f32 = 0.96;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CanvasBackground {
@@ -526,44 +527,6 @@ fn draw_stroke(painter: &egui::Painter, stroke: &DrawStroke) {
     }
 }
 
-fn canvas_image_size_from_rect(canvas_rect: egui::Rect) -> (u32, u32) {
-    (
-        canvas_rect.width().round().max(1.0) as u32,
-        canvas_rect.height().round().max(1.0) as u32,
-    )
-}
-
-fn canvas_rect_to_screen_capture_rect(
-    canvas_rect: egui::Rect,
-    viewport_inner_rect: egui::Rect,
-    pixels_per_point: f32,
-) -> Option<ScreenCaptureRect> {
-    if !pixels_per_point.is_finite() || pixels_per_point <= 0.0 {
-        return None;
-    }
-
-    let screen_min = viewport_inner_rect.min + canvas_rect.min.to_vec2();
-    let screen_max = viewport_inner_rect.min + canvas_rect.max.to_vec2();
-    let min_x = (screen_min.x * pixels_per_point).floor();
-    let min_y = (screen_min.y * pixels_per_point).floor();
-    let max_x = (screen_max.x * pixels_per_point).ceil();
-    let max_y = (screen_max.y * pixels_per_point).ceil();
-
-    if ![min_x, min_y, max_x, max_y]
-        .iter()
-        .all(|coordinate| coordinate.is_finite())
-    {
-        return None;
-    }
-
-    Some(ScreenCaptureRect {
-        x: min_x as i32,
-        y: min_y as i32,
-        width: (max_x - min_x).max(1.0) as u32,
-        height: (max_y - min_y).max(1.0) as u32,
-    })
-}
-
 fn draw_eraser_preview(
     painter: &egui::Painter,
     path: &[egui::Pos2],
@@ -681,76 +644,14 @@ fn push_point_if_needed(points: &mut Vec<egui::Pos2>, pos: egui::Pos2) {
     }
 }
 
-fn push_pen_point_if_needed(points: &mut Vec<egui::Pos2>, pos: egui::Pos2, width: f32) {
-    let min_distance = pen_point_min_distance(width);
-
-    match points.len() {
-        0 => {
-            points.push(pos);
-        }
-        1 => {
-            if points[0].distance(pos) >= min_distance {
-                points.push(pos);
-            }
-        }
-        _ => {
-            let previous = points[points.len() - 2];
-            let last = points[points.len() - 1];
-
-            if should_replace_last_pen_point(previous, last, pos, min_distance) {
-                if let Some(last_point) = points.last_mut() {
-                    *last_point = pos;
-                }
-                return;
-            }
-
-            if last.distance(pos) >= min_distance {
-                points.push(pos);
-            }
-        }
-    }
-}
-
-fn pen_point_min_distance(width: f32) -> f32 {
-    (PEN_POINT_MIN_DISTANCE + width * PEN_POINT_DISTANCE_PER_WIDTH).min(PEN_POINT_MAX_DISTANCE)
-}
-
-fn should_replace_last_pen_point(
-    previous: egui::Pos2,
-    last: egui::Pos2,
-    pos: egui::Pos2,
-    min_distance: f32,
-) -> bool {
-    let incoming = last - previous;
-    let outgoing = pos - last;
-
-    if incoming.length_sq() <= f32::EPSILON || outgoing.length_sq() <= f32::EPSILON {
-        return false;
-    }
-
-    if outgoing.length() > min_distance * 1.5 {
-        return false;
-    }
-
-    incoming.normalized().dot(outgoing.normalized()) >= PEN_DIRECTION_ALIGNMENT_THRESHOLD
-}
-
-fn is_near_canvas_edge(rect: egui::Rect, pointer_pos: egui::Pos2) -> bool {
-    let distance_to_left = (pointer_pos.x - rect.left()).abs();
-    let distance_to_right = (rect.right() - pointer_pos.x).abs();
-    let distance_to_bottom = (rect.bottom() - pointer_pos.y).abs();
-
-    distance_to_left <= CANVAS_BORDER_HOVER_THRESHOLD
-        || distance_to_right <= CANVAS_BORDER_HOVER_THRESHOLD
-        || distance_to_bottom <= CANVAS_BORDER_HOVER_THRESHOLD
-}
-
 #[cfg(test)]
 mod tests {
     use super::eraser::{
         distance_point_to_segment, erase_from_stroke, point_is_inside_eraser_path,
         sample_segment_points,
     };
+    use super::geometry::{canvas_rect_to_screen_capture_rect, is_near_canvas_edge};
+    use super::pen::{PEN_POINT_MAX_DISTANCE, pen_point_min_distance, push_pen_point_if_needed};
     use super::raster::screen_point_to_capture_image_point;
     use super::*;
     use image::Rgba;
