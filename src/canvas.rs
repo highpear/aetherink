@@ -1,16 +1,18 @@
 use std::path::Path;
 
 mod cursor;
+mod display;
 mod eraser;
 mod geometry;
 mod pen;
 mod raster;
 
-use egui::{Color32, CursorIcon, Response, Sense, Shape, Stroke, Ui};
+use egui::{Color32, CursorIcon, Response, Sense, Stroke, Ui};
 use image::RgbaImage;
 use serde::{Deserialize, Serialize};
 
 use self::cursor::draw_cursor_indicator;
+use self::display::draw_stroke;
 use self::eraser::erase_from_strokes;
 use self::geometry::{
     canvas_image_size_from_rect, canvas_rect_to_screen_capture_rect, is_near_canvas_edge,
@@ -514,16 +516,6 @@ impl CanvasState {
     fn push_history_snapshot(&mut self) {
         self.history.push(self.strokes.clone());
         self.redo_history.clear();
-    }
-}
-
-fn draw_stroke(painter: &egui::Painter, stroke: &DrawStroke) {
-    let line_stroke = Stroke::new(stroke.width, stroke.color);
-
-    if stroke.points.len() == 2 {
-        painter.line_segment([stroke.points[0], stroke.points[1]], line_stroke);
-    } else if stroke.points.len() > 2 {
-        painter.add(Shape::line(stroke.points.clone(), line_stroke));
     }
 }
 
