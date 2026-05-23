@@ -540,13 +540,6 @@ fn push_point_if_needed(points: &mut Vec<egui::Pos2>, pos: egui::Pos2) {
 
 #[cfg(test)]
 mod tests {
-    use super::eraser::{
-        distance_point_to_segment, erase_from_stroke, point_is_inside_eraser_path,
-        sample_segment_points,
-    };
-    use super::geometry::{canvas_rect_to_screen_capture_rect, is_near_canvas_edge};
-    use super::pen::{PEN_POINT_MAX_DISTANCE, pen_point_min_distance, push_pen_point_if_needed};
-    use super::raster::screen_point_to_capture_image_point;
     use super::*;
     use image::Rgba;
     use std::path::PathBuf;
@@ -570,23 +563,6 @@ mod tests {
             "aetherink-{name}-{}-{unique_suffix}.png",
             std::process::id()
         ))
-    }
-
-    fn assert_pos2_approx_eq(actual: egui::Pos2, expected: egui::Pos2) {
-        const TOLERANCE: f32 = 0.000_001;
-
-        assert!(
-            (actual.x - expected.x).abs() <= TOLERANCE,
-            "x mismatch: actual={}, expected={}",
-            actual.x,
-            expected.x
-        );
-        assert!(
-            (actual.y - expected.y).abs() <= TOLERANCE,
-            "y mismatch: actual={}, expected={}",
-            actual.y,
-            expected.y
-        );
     }
 
     #[test]
@@ -821,83 +797,6 @@ mod tests {
     }
 
     #[test]
-    fn screen_point_to_capture_image_point_accounts_for_scale_and_outward_rounding() {
-        let point = screen_point_to_capture_image_point(
-            egui::pos2(10.25, 20.25),
-            egui::pos2(-4.5, 5.25),
-            egui::pos2(8.0, 38.0),
-            1.5,
-        );
-
-        assert_pos2_approx_eq(point, egui::pos2(0.625, 0.25));
-    }
-
-    #[test]
-    fn screen_point_to_capture_image_point_maps_canvas_end_into_capture_space() {
-        let point = screen_point_to_capture_image_point(
-            egui::pos2(30.5, 40.5),
-            egui::pos2(-4.5, 5.25),
-            egui::pos2(8.0, 38.0),
-            1.5,
-        );
-
-        assert_pos2_approx_eq(point, egui::pos2(31.0, 30.625));
-    }
-
-    #[test]
-    fn canvas_screen_capture_rect_maps_canvas_points_to_screen_pixels() {
-        let canvas_rect =
-            egui::Rect::from_min_max(egui::pos2(10.0, 24.0), egui::pos2(310.0, 224.0));
-        let viewport_inner_rect =
-            egui::Rect::from_min_size(egui::pos2(100.0, 50.0), egui::vec2(800.0, 600.0));
-
-        let screen_rect = canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, 2.0)
-            .expect("valid viewport and scale should map to a screen rect");
-
-        assert_eq!(
-            screen_rect,
-            ScreenCaptureRect {
-                x: 220,
-                y: 148,
-                width: 600,
-                height: 400,
-            }
-        );
-    }
-
-    #[test]
-    fn canvas_screen_capture_rect_rounds_outward() {
-        let canvas_rect =
-            egui::Rect::from_min_max(egui::pos2(10.25, 20.25), egui::pos2(30.5, 40.5));
-        let viewport_inner_rect =
-            egui::Rect::from_min_size(egui::pos2(-4.5, 5.25), egui::vec2(800.0, 600.0));
-
-        let screen_rect = canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, 1.5)
-            .expect("fractional coordinates should map to a screen rect");
-
-        assert_eq!(
-            screen_rect,
-            ScreenCaptureRect {
-                x: 8,
-                y: 38,
-                width: 31,
-                height: 31,
-            }
-        );
-    }
-
-    #[test]
-    fn canvas_screen_capture_rect_rejects_invalid_scale() {
-        let canvas_rect = egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 100.0));
-        let viewport_inner_rect =
-            egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(800.0, 600.0));
-
-        assert!(
-            canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, 0.0).is_none()
-        );
-    }
-
-    #[test]
     fn switching_tool_finishes_current_stroke() {
         let mut canvas = CanvasState {
             current_stroke: Some(stroke(&[(0.0, 0.0), (10.0, 0.0)])),
@@ -910,168 +809,6 @@ mod tests {
         assert_eq!(canvas.strokes, vec![stroke(&[(0.0, 0.0), (10.0, 0.0)])]);
         assert!(canvas.current_stroke.is_none());
         assert!(canvas.can_undo());
-    }
-
-    #[test]
-    fn pen_point_filter_replaces_close_collinear_point() {
-        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
-
-        push_pen_point_if_needed(&mut points, egui::pos2(2.5, 0.0), 2.0);
-
-        assert_eq!(points, vec![egui::pos2(0.0, 0.0), egui::pos2(2.5, 0.0)]);
-    }
-
-    #[test]
-    fn pen_point_filter_keeps_turning_points() {
-        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
-
-        push_pen_point_if_needed(&mut points, egui::pos2(2.0, 2.0), 2.0);
-
-        assert_eq!(
-            points,
-            vec![
-                egui::pos2(0.0, 0.0),
-                egui::pos2(2.0, 0.0),
-                egui::pos2(2.0, 2.0)
-            ]
-        );
-    }
-
-    #[test]
-    fn pen_point_filter_adds_distant_collinear_points() {
-        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
-
-        push_pen_point_if_needed(&mut points, egui::pos2(5.0, 0.0), 2.0);
-
-        assert_eq!(
-            points,
-            vec![
-                egui::pos2(0.0, 0.0),
-                egui::pos2(2.0, 0.0),
-                egui::pos2(5.0, 0.0)
-            ]
-        );
-    }
-
-    #[test]
-    fn pen_point_min_distance_grows_with_width_until_cap() {
-        assert_eq!(pen_point_min_distance(1.0), 1.35);
-        assert_eq!(pen_point_min_distance(4.0), 2.4);
-        assert_eq!(pen_point_min_distance(20.0), PEN_POINT_MAX_DISTANCE);
-    }
-
-    #[test]
-    fn sample_segment_points_includes_endpoints_and_even_spacing() {
-        let points = sample_segment_points(egui::pos2(0.0, 0.0), egui::pos2(5.0, 0.0), 2.0);
-
-        assert_eq!(points.len(), 4);
-        assert_pos2_approx_eq(points[0], egui::pos2(0.0, 0.0));
-        assert_pos2_approx_eq(points[1], egui::pos2(5.0 / 3.0, 0.0));
-        assert_pos2_approx_eq(points[2], egui::pos2(10.0 / 3.0, 0.0));
-        assert_pos2_approx_eq(points[3], egui::pos2(5.0, 0.0));
-    }
-
-    #[test]
-    fn eraser_splits_stroke_around_erased_segment() {
-        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
-        let eraser_path = [egui::pos2(5.0, 0.0)];
-
-        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
-
-        assert_eq!(remaining.len(), 2);
-        assert_eq!(
-            remaining[0].points,
-            vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)]
-        );
-        assert_eq!(
-            remaining[1].points,
-            vec![egui::pos2(8.0, 0.0), egui::pos2(10.0, 0.0)]
-        );
-    }
-
-    #[test]
-    fn eraser_keeps_stroke_when_path_misses() {
-        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
-        let eraser_path = [egui::pos2(5.0, 10.0)];
-
-        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
-
-        assert_eq!(remaining.len(), 1);
-        assert_eq!(remaining[0].color, source.color);
-        assert_eq!(remaining[0].width, source.width);
-        assert_eq!(remaining[0].points.first(), source.points.first());
-        assert_eq!(remaining[0].points.last(), source.points.last());
-    }
-
-    #[test]
-    fn eraser_removes_fully_covered_stroke() {
-        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
-        let eraser_path = [egui::pos2(5.0, 0.0)];
-
-        let remaining = erase_from_stroke(&source, &eraser_path, 20.0);
-
-        assert!(remaining.is_empty());
-    }
-
-    #[test]
-    fn eraser_drops_non_meaningful_strokes() {
-        let source = stroke(&[(0.0, 0.0)]);
-        let eraser_path = [egui::pos2(0.0, 0.0)];
-
-        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
-
-        assert!(remaining.is_empty());
-    }
-
-    #[test]
-    fn point_inside_eraser_path_checks_single_point_radius() {
-        let eraser_path = [egui::pos2(5.0, 5.0)];
-
-        assert!(point_is_inside_eraser_path(
-            egui::pos2(6.0, 5.0),
-            &eraser_path,
-            1.0
-        ));
-        assert!(!point_is_inside_eraser_path(
-            egui::pos2(6.1, 5.0),
-            &eraser_path,
-            1.0
-        ));
-    }
-
-    #[test]
-    fn point_inside_eraser_path_checks_segment_distance() {
-        let eraser_path = [egui::pos2(0.0, 0.0), egui::pos2(10.0, 0.0)];
-
-        assert!(point_is_inside_eraser_path(
-            egui::pos2(5.0, 1.0),
-            &eraser_path,
-            1.0
-        ));
-        assert!(!point_is_inside_eraser_path(
-            egui::pos2(5.0, 1.1),
-            &eraser_path,
-            1.0
-        ));
-    }
-
-    #[test]
-    fn distance_point_to_segment_clamps_projection_to_segment() {
-        let start = egui::pos2(0.0, 0.0);
-        let end = egui::pos2(10.0, 0.0);
-
-        assert_eq!(
-            distance_point_to_segment(egui::pos2(5.0, 3.0), start, end),
-            3.0
-        );
-        assert_eq!(
-            distance_point_to_segment(egui::pos2(-3.0, 4.0), start, end),
-            5.0
-        );
-        assert_eq!(
-            distance_point_to_segment(egui::pos2(13.0, 4.0), start, end),
-            5.0
-        );
     }
 
     #[test]
@@ -1134,15 +871,5 @@ mod tests {
             .expect_err("PNG export should fail before the canvas is laid out");
 
         assert_eq!(error, "The canvas size is not available yet.");
-    }
-
-    #[test]
-    fn near_edges_border_check_ignores_top_edge() {
-        let rect = egui::Rect::from_min_size(egui::pos2(10.0, 10.0), egui::vec2(100.0, 80.0));
-
-        assert!(is_near_canvas_edge(rect, egui::pos2(12.0, 50.0)));
-        assert!(is_near_canvas_edge(rect, egui::pos2(108.0, 50.0)));
-        assert!(is_near_canvas_edge(rect, egui::pos2(50.0, 88.0)));
-        assert!(!is_near_canvas_edge(rect, egui::pos2(50.0, 12.0)));
     }
 }

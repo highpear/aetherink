@@ -145,3 +145,149 @@ fn push_point_if_needed(points: &mut Vec<egui::Pos2>, pos: egui::Pos2) {
         points.push(pos);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use egui::Color32;
+
+    use super::*;
+
+    fn stroke(points: &[(f32, f32)]) -> DrawStroke {
+        DrawStroke {
+            points: points.iter().map(|(x, y)| egui::pos2(*x, *y)).collect(),
+            color: Color32::BLACK,
+            width: 2.0,
+        }
+    }
+
+    fn assert_pos2_approx_eq(actual: egui::Pos2, expected: egui::Pos2) {
+        const TOLERANCE: f32 = 0.000_001;
+
+        assert!(
+            (actual.x - expected.x).abs() <= TOLERANCE,
+            "x mismatch: actual={}, expected={}",
+            actual.x,
+            expected.x
+        );
+        assert!(
+            (actual.y - expected.y).abs() <= TOLERANCE,
+            "y mismatch: actual={}, expected={}",
+            actual.y,
+            expected.y
+        );
+    }
+
+    #[test]
+    fn sample_segment_points_includes_endpoints_and_even_spacing() {
+        let points = sample_segment_points(egui::pos2(0.0, 0.0), egui::pos2(5.0, 0.0), 2.0);
+
+        assert_eq!(points.len(), 4);
+        assert_pos2_approx_eq(points[0], egui::pos2(0.0, 0.0));
+        assert_pos2_approx_eq(points[1], egui::pos2(5.0 / 3.0, 0.0));
+        assert_pos2_approx_eq(points[2], egui::pos2(10.0 / 3.0, 0.0));
+        assert_pos2_approx_eq(points[3], egui::pos2(5.0, 0.0));
+    }
+
+    #[test]
+    fn eraser_splits_stroke_around_erased_segment() {
+        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
+        let eraser_path = [egui::pos2(5.0, 0.0)];
+
+        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
+
+        assert_eq!(remaining.len(), 2);
+        assert_eq!(
+            remaining[0].points,
+            vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)]
+        );
+        assert_eq!(
+            remaining[1].points,
+            vec![egui::pos2(8.0, 0.0), egui::pos2(10.0, 0.0)]
+        );
+    }
+
+    #[test]
+    fn eraser_keeps_stroke_when_path_misses() {
+        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
+        let eraser_path = [egui::pos2(5.0, 10.0)];
+
+        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
+
+        assert_eq!(remaining.len(), 1);
+        assert_eq!(remaining[0].color, source.color);
+        assert_eq!(remaining[0].width, source.width);
+        assert_eq!(remaining[0].points.first(), source.points.first());
+        assert_eq!(remaining[0].points.last(), source.points.last());
+    }
+
+    #[test]
+    fn eraser_removes_fully_covered_stroke() {
+        let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
+        let eraser_path = [egui::pos2(5.0, 0.0)];
+
+        let remaining = erase_from_stroke(&source, &eraser_path, 20.0);
+
+        assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn eraser_drops_non_meaningful_strokes() {
+        let source = stroke(&[(0.0, 0.0)]);
+        let eraser_path = [egui::pos2(0.0, 0.0)];
+
+        let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
+
+        assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn point_inside_eraser_path_checks_single_point_radius() {
+        let eraser_path = [egui::pos2(5.0, 5.0)];
+
+        assert!(point_is_inside_eraser_path(
+            egui::pos2(6.0, 5.0),
+            &eraser_path,
+            1.0
+        ));
+        assert!(!point_is_inside_eraser_path(
+            egui::pos2(6.1, 5.0),
+            &eraser_path,
+            1.0
+        ));
+    }
+
+    #[test]
+    fn point_inside_eraser_path_checks_segment_distance() {
+        let eraser_path = [egui::pos2(0.0, 0.0), egui::pos2(10.0, 0.0)];
+
+        assert!(point_is_inside_eraser_path(
+            egui::pos2(5.0, 1.0),
+            &eraser_path,
+            1.0
+        ));
+        assert!(!point_is_inside_eraser_path(
+            egui::pos2(5.0, 1.1),
+            &eraser_path,
+            1.0
+        ));
+    }
+
+    #[test]
+    fn distance_point_to_segment_clamps_projection_to_segment() {
+        let start = egui::pos2(0.0, 0.0);
+        let end = egui::pos2(10.0, 0.0);
+
+        assert_eq!(
+            distance_point_to_segment(egui::pos2(5.0, 3.0), start, end),
+            3.0
+        );
+        assert_eq!(
+            distance_point_to_segment(egui::pos2(-3.0, 4.0), start, end),
+            5.0
+        );
+        assert_eq!(
+            distance_point_to_segment(egui::pos2(13.0, 4.0), start, end),
+            5.0
+        );
+    }
+}

@@ -145,3 +145,49 @@ pub(super) fn rgba_from_color32(color: Color32) -> Rgba<u8> {
     let [red, green, blue, alpha] = color.to_array();
     Rgba([red, green, blue, alpha])
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assert_pos2_approx_eq(actual: egui::Pos2, expected: egui::Pos2) {
+        const TOLERANCE: f32 = 0.000_001;
+
+        assert!(
+            (actual.x - expected.x).abs() <= TOLERANCE,
+            "x mismatch: actual={}, expected={}",
+            actual.x,
+            expected.x
+        );
+        assert!(
+            (actual.y - expected.y).abs() <= TOLERANCE,
+            "y mismatch: actual={}, expected={}",
+            actual.y,
+            expected.y
+        );
+    }
+
+    #[test]
+    fn screen_point_to_capture_image_point_accounts_for_scale_and_outward_rounding() {
+        let point = screen_point_to_capture_image_point(
+            egui::pos2(10.25, 20.25),
+            egui::pos2(-4.5, 5.25),
+            egui::pos2(8.0, 38.0),
+            1.5,
+        );
+
+        assert_pos2_approx_eq(point, egui::pos2(0.625, 0.25));
+    }
+
+    #[test]
+    fn screen_point_to_capture_image_point_maps_canvas_end_into_capture_space() {
+        let point = screen_point_to_capture_image_point(
+            egui::pos2(30.5, 40.5),
+            egui::pos2(-4.5, 5.25),
+            egui::pos2(8.0, 38.0),
+            1.5,
+        );
+
+        assert_pos2_approx_eq(point, egui::pos2(31.0, 30.625));
+    }
+}

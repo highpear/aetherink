@@ -56,3 +56,56 @@ fn should_replace_last_pen_point(
 
     incoming.normalized().dot(outgoing.normalized()) >= PEN_DIRECTION_ALIGNMENT_THRESHOLD
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pen_point_filter_replaces_close_collinear_point() {
+        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
+
+        push_pen_point_if_needed(&mut points, egui::pos2(2.5, 0.0), 2.0);
+
+        assert_eq!(points, vec![egui::pos2(0.0, 0.0), egui::pos2(2.5, 0.0)]);
+    }
+
+    #[test]
+    fn pen_point_filter_keeps_turning_points() {
+        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
+
+        push_pen_point_if_needed(&mut points, egui::pos2(2.0, 2.0), 2.0);
+
+        assert_eq!(
+            points,
+            vec![
+                egui::pos2(0.0, 0.0),
+                egui::pos2(2.0, 0.0),
+                egui::pos2(2.0, 2.0)
+            ]
+        );
+    }
+
+    #[test]
+    fn pen_point_filter_adds_distant_collinear_points() {
+        let mut points = vec![egui::pos2(0.0, 0.0), egui::pos2(2.0, 0.0)];
+
+        push_pen_point_if_needed(&mut points, egui::pos2(5.0, 0.0), 2.0);
+
+        assert_eq!(
+            points,
+            vec![
+                egui::pos2(0.0, 0.0),
+                egui::pos2(2.0, 0.0),
+                egui::pos2(5.0, 0.0)
+            ]
+        );
+    }
+
+    #[test]
+    fn pen_point_min_distance_grows_with_width_until_cap() {
+        assert_eq!(pen_point_min_distance(1.0), 1.35);
+        assert_eq!(pen_point_min_distance(4.0), 2.4);
+        assert_eq!(pen_point_min_distance(20.0), PEN_POINT_MAX_DISTANCE);
+    }
+}

@@ -49,3 +49,71 @@ pub(super) fn is_near_canvas_edge(rect: egui::Rect, pointer_pos: egui::Pos2) -> 
         || distance_to_right <= CANVAS_BORDER_HOVER_THRESHOLD
         || distance_to_bottom <= CANVAS_BORDER_HOVER_THRESHOLD
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn canvas_screen_capture_rect_maps_canvas_points_to_screen_pixels() {
+        let canvas_rect =
+            egui::Rect::from_min_max(egui::pos2(10.0, 24.0), egui::pos2(310.0, 224.0));
+        let viewport_inner_rect =
+            egui::Rect::from_min_size(egui::pos2(100.0, 50.0), egui::vec2(800.0, 600.0));
+
+        let screen_rect = canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, 2.0)
+            .expect("valid viewport and scale should map to a screen rect");
+
+        assert_eq!(
+            screen_rect,
+            ScreenCaptureRect {
+                x: 220,
+                y: 148,
+                width: 600,
+                height: 400,
+            }
+        );
+    }
+
+    #[test]
+    fn canvas_screen_capture_rect_rounds_outward() {
+        let canvas_rect =
+            egui::Rect::from_min_max(egui::pos2(10.25, 20.25), egui::pos2(30.5, 40.5));
+        let viewport_inner_rect =
+            egui::Rect::from_min_size(egui::pos2(-4.5, 5.25), egui::vec2(800.0, 600.0));
+
+        let screen_rect = canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, 1.5)
+            .expect("fractional coordinates should map to a screen rect");
+
+        assert_eq!(
+            screen_rect,
+            ScreenCaptureRect {
+                x: 8,
+                y: 38,
+                width: 31,
+                height: 31,
+            }
+        );
+    }
+
+    #[test]
+    fn canvas_screen_capture_rect_rejects_invalid_scale() {
+        let canvas_rect = egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 100.0));
+        let viewport_inner_rect =
+            egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(800.0, 600.0));
+
+        assert!(
+            canvas_rect_to_screen_capture_rect(canvas_rect, viewport_inner_rect, 0.0).is_none()
+        );
+    }
+
+    #[test]
+    fn near_edges_border_check_ignores_top_edge() {
+        let rect = egui::Rect::from_min_size(egui::pos2(10.0, 10.0), egui::vec2(100.0, 80.0));
+
+        assert!(is_near_canvas_edge(rect, egui::pos2(12.0, 50.0)));
+        assert!(is_near_canvas_edge(rect, egui::pos2(108.0, 50.0)));
+        assert!(is_near_canvas_edge(rect, egui::pos2(50.0, 88.0)));
+        assert!(!is_near_canvas_edge(rect, egui::pos2(50.0, 12.0)));
+    }
+}
