@@ -44,8 +44,14 @@ struct ExportStatus {
 }
 
 #[derive(Debug, Clone)]
-struct PendingBackgroundPngExport {
-    path: PathBuf,
+enum PendingBackgroundCaptureTarget {
+    PngExport { path: PathBuf },
+    ClipboardCopy,
+}
+
+#[derive(Debug, Clone)]
+struct PendingBackgroundCapture {
+    target: PendingBackgroundCaptureTarget,
     capture_not_before: Instant,
     capture_ready: bool,
 }
@@ -56,17 +62,18 @@ pub struct AetherInkApp {
     overlay: OverlaySettings,
     last_export_directory: Option<PathBuf>,
     is_settings_window_open: bool,
+    copy_includes_screen_background: bool,
     export_status: Option<ExportStatus>,
     temporary_drawing_active: bool,
     click_through_controller: ClickThroughController,
     background_capture_controller: BackgroundCaptureController,
     background_capture_availability: BackgroundCaptureAvailability,
-    pending_background_png_export: Option<PendingBackgroundPngExport>,
+    pending_background_capture: Option<PendingBackgroundCapture>,
 }
 
 impl eframe::App for AetherInkApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.capture_pending_background_png_export(ctx);
+        self.capture_pending_background(ctx);
         self.sync_overlay_state(ctx);
 
         if keyboard_shortcut_pressed(ctx, egui::Key::Z, false) {
@@ -112,7 +119,7 @@ impl eframe::App for AetherInkApp {
                 }
             });
 
-        self.mark_pending_background_png_export_ready(ctx);
+        self.mark_pending_background_capture_ready(ctx);
         self.show_overlay_status_banner(ctx);
         self.show_export_toast(ctx);
         self.schedule_repaint(ctx);
@@ -152,6 +159,7 @@ impl AetherInkApp {
         self.canvas.apply_settings(settings.canvas);
         self.overlay = settings.overlay;
         self.last_export_directory = settings.last_export_directory;
+        self.copy_includes_screen_background = settings.copy_includes_screen_background;
     }
 
     fn collect_settings(&self) -> AppSettings {
@@ -159,6 +167,7 @@ impl AetherInkApp {
             canvas: self.canvas.settings(),
             overlay: self.overlay.clone(),
             last_export_directory: self.last_export_directory.clone(),
+            copy_includes_screen_background: self.copy_includes_screen_background,
         }
     }
 
@@ -362,10 +371,12 @@ impl AetherInkApp {
 
         if ui
             .add_enabled(has_strokes, copy_image_button())
-            .on_hover_text(if has_strokes {
-                "Copy the current canvas image to the clipboard"
-            } else {
+            .on_hover_text(if !has_strokes {
                 "Draw something on the canvas before copying an image"
+            } else if self.copy_should_include_screen_background() {
+                "Copy the transparent canvas with the screen background behind it"
+            } else {
+                "Copy the current canvas image to the clipboard"
             })
             .clicked()
         {
@@ -607,9 +618,9 @@ impl AetherInkApp {
             ctx.request_repaint_after(CLICK_THROUGH_POLL_INTERVAL);
         }
 
-        if self.pending_background_png_export.is_some() {
+        if self.pending_background_capture.is_some() {
             let repaint_after = self
-                .pending_background_png_export
+                .pending_background_capture
                 .as_ref()
                 .map(|pending_export| {
                     pending_export
@@ -669,13 +680,22 @@ impl AetherInkApp {
         self.last_export_directory = path.parent().map(Path::to_path_buf);
 
         self.canvas.stop_drawing();
-        self.pending_background_png_export = Some(PendingBackgroundPngExport {
-            path,
+        self.pending_background_capture = Some(PendingBackgroundCapture {
+            target: PendingBackgroundCaptureTarget::PngExport { path },
             capture_not_before: Instant::now() + BACKGROUND_CAPTURE_DIALOG_DISMISS_DELAY,
             capture_ready: false,
         });
 
         Ok(true)
+    }
+
+    fn begin_canvas_with_captured_background_clipboard_copy(&mut self) {
+        self.canvas.stop_drawing();
+        self.pending_background_capture = Some(PendingBackgroundCapture {
+            target: PendingBackgroundCaptureTarget::ClipboardCopy,
+            capture_not_before: Instant::now() + BACKGROUND_CAPTURE_DIALOG_DISMISS_DELAY,
+            capture_ready: false,
+        });
     }
 
     fn quick_save_canvas_png(&mut self) -> Result<PathBuf, String> {
@@ -704,25 +724,26 @@ impl AetherInkApp {
         self.canvas.stop_drawing();
 
         let image = self.canvas.render_image()?;
-        let width = image.width() as usize;
-        let height = image.height() as usize;
-        let bytes = image.into_raw();
-        let mut clipboard =
-            Clipboard::new().map_err(|error| format!("Failed to open clipboard: {error}"))?;
+        copy_image_to_clipboard(image)
+    }
 
-        clipboard
-            .set_image(ImageData {
-                width,
-                height,
-                bytes: bytes.into(),
-            })
-            .map_err(|error| format!("Failed to copy image: {error}"))
+    fn copy_canvas_with_captured_background_to_clipboard(
+        &mut self,
+        ctx: &egui::Context,
+    ) -> Result<(), String> {
+        let image = self.render_canvas_with_captured_background(ctx, None)?;
+        copy_image_to_clipboard(image)
+    }
+
+    fn copy_should_include_screen_background(&self) -> bool {
+        self.copy_includes_screen_background
+            && self.canvas.background() == CanvasBackground::Transparent
     }
 
     fn render_canvas_with_captured_background(
         &mut self,
         ctx: &egui::Context,
-        export_path: &Path,
+        debug_export_path: Option<&Path>,
     ) -> Result<image::RgbaImage, String> {
         self.canvas.stop_drawing();
 
@@ -742,18 +763,19 @@ impl AetherInkApp {
             .capture_background(capture_rect)?;
 
         #[cfg(debug_assertions)]
-        save_debug_background_capture(&background, export_path)?;
+        if let Some(debug_export_path) = debug_export_path {
+            save_debug_background_capture(&background, debug_export_path)?;
+        }
 
         self.canvas
             .render_image_over_screen_background(background, ctx)
     }
 
     fn should_hide_ink_for_background_capture(&self) -> bool {
-        self.pending_background_png_export.is_some()
+        self.pending_background_capture.is_some()
     }
-
-    fn mark_pending_background_png_export_ready(&mut self, ctx: &egui::Context) {
-        if let Some(pending_export) = &mut self.pending_background_png_export
+    fn mark_pending_background_capture_ready(&mut self, ctx: &egui::Context) {
+        if let Some(pending_export) = &mut self.pending_background_capture
             && !pending_export.capture_ready
         {
             let now = Instant::now();
@@ -767,8 +789,8 @@ impl AetherInkApp {
         }
     }
 
-    fn capture_pending_background_png_export(&mut self, ctx: &egui::Context) {
-        let Some(pending_export) = &self.pending_background_png_export else {
+    fn capture_pending_background(&mut self, ctx: &egui::Context) {
+        let Some(pending_export) = &self.pending_background_capture else {
             return;
         };
 
@@ -776,20 +798,40 @@ impl AetherInkApp {
             return;
         }
 
-        let path = pending_export.path.clone();
-        self.pending_background_png_export = None;
+        let target = pending_export.target.clone();
+        self.pending_background_capture = None;
 
-        self.export_status = match self.save_captured_background_png(ctx, &path) {
-            Ok(()) => Some(ExportStatus {
-                kind: ExportStatusKind::Success,
-                message: format!("Saved background PNG: {}", path.display()),
-                visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
-            }),
-            Err(error) => Some(ExportStatus {
-                kind: ExportStatusKind::Error,
-                message: error,
-                visible_until: Instant::now() + ERROR_TOAST_DURATION,
-            }),
+        self.export_status = match target {
+            PendingBackgroundCaptureTarget::PngExport { path } => {
+                match self.save_captured_background_png(ctx, &path) {
+                    Ok(()) => Some(ExportStatus {
+                        kind: ExportStatusKind::Success,
+                        message: format!("Saved background PNG: {}", path.display()),
+                        visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
+                    }),
+                    Err(error) => Some(ExportStatus {
+                        kind: ExportStatusKind::Error,
+                        message: error,
+                        visible_until: Instant::now() + ERROR_TOAST_DURATION,
+                    }),
+                }
+            }
+            PendingBackgroundCaptureTarget::ClipboardCopy => {
+                match self.copy_canvas_with_captured_background_to_clipboard(ctx) {
+                    Ok(()) => Some(ExportStatus {
+                        kind: ExportStatusKind::Success,
+                        message: String::from(
+                            "Copied canvas image with screen background to clipboard.",
+                        ),
+                        visible_until: Instant::now() + SUCCESS_TOAST_DURATION,
+                    }),
+                    Err(error) => Some(ExportStatus {
+                        kind: ExportStatusKind::Error,
+                        message: error,
+                        visible_until: Instant::now() + ERROR_TOAST_DURATION,
+                    }),
+                }
+            }
         };
     }
 
@@ -798,7 +840,7 @@ impl AetherInkApp {
         ctx: &egui::Context,
         path: &Path,
     ) -> Result<(), String> {
-        let image = self.render_canvas_with_captured_background(ctx, path)?;
+        let image = self.render_canvas_with_captured_background(ctx, Some(path))?;
         image
             .save(path)
             .map_err(|error| format!("Failed to save PNG: {error}"))
@@ -821,6 +863,11 @@ impl AetherInkApp {
     }
 
     fn start_clipboard_image_copy(&mut self) {
+        if self.copy_should_include_screen_background() {
+            self.start_clipboard_image_copy_with_screen_background();
+            return;
+        }
+
         self.export_status = match self.copy_canvas_image_to_clipboard() {
             Ok(()) => Some(ExportStatus {
                 kind: ExportStatusKind::Success,
@@ -833,6 +880,28 @@ impl AetherInkApp {
                 visible_until: Instant::now() + ERROR_TOAST_DURATION,
             }),
         };
+    }
+
+    fn start_clipboard_image_copy_with_screen_background(&mut self) {
+        self.refresh_background_capture_availability();
+
+        if self.background_capture_availability == BackgroundCaptureAvailability::PermissionRequired
+        {
+            self.request_background_capture_permission();
+            return;
+        }
+
+        if self.background_capture_availability == BackgroundCaptureAvailability::Unsupported {
+            self.export_status = Some(ExportStatus {
+                kind: ExportStatusKind::Error,
+                message: String::from("Background copy is not available on this platform yet."),
+                visible_until: Instant::now() + ERROR_TOAST_DURATION,
+            });
+            return;
+        }
+
+        self.begin_canvas_with_captured_background_clipboard_copy();
+        self.export_status = self.export_status.take();
     }
 
     fn start_captured_background_png_export(&mut self) {
@@ -923,6 +992,22 @@ fn background_export_file_name() -> String {
         "aetherink-background-{}.png",
         timestamp.format("%Y%m%d-%H%M%S")
     )
+}
+
+fn copy_image_to_clipboard(image: image::RgbaImage) -> Result<(), String> {
+    let width = image.width() as usize;
+    let height = image.height() as usize;
+    let bytes = image.into_raw();
+    let mut clipboard =
+        Clipboard::new().map_err(|error| format!("Failed to open clipboard: {error}"))?;
+
+    clipboard
+        .set_image(ImageData {
+            width,
+            height,
+            bytes: bytes.into(),
+        })
+        .map_err(|error| format!("Failed to copy image: {error}"))
 }
 
 fn background_png_button_hover_text(

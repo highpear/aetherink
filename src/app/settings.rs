@@ -31,6 +31,7 @@ pub(crate) struct AppSettings {
     pub(crate) canvas: CanvasSettings,
     pub(crate) overlay: OverlaySettings,
     pub(crate) last_export_directory: Option<PathBuf>,
+    pub(crate) copy_includes_screen_background: bool,
 }
 
 #[cfg(test)]
@@ -53,5 +54,12 @@ mod tests {
         let settings = AppSettings::default();
 
         assert!(settings.last_export_directory.is_none());
+    }
+
+    #[test]
+    fn app_settings_default_copies_canvas_background_only() {
+        let settings = AppSettings::default();
+
+        assert!(!settings.copy_includes_screen_background);
     }
 }

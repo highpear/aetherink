@@ -32,6 +32,7 @@ Drawing
 - Quick save the current canvas as a PNG file
 - Save a transparent canvas PNG with the screen background behind it
 - Copy the current canvas image to the clipboard
+- Optionally copy transparent canvas images with the screen background behind them
 - Keyboard shortcuts for undo and clear
 
 Canvas and window
@@ -89,6 +90,7 @@ Overlay workflow
 - `Always on top`: Keep the window above other windows
 - `Borderless window`: Hide standard window decorations
 - `Transparent window background`: Blend the window chrome and panel background into the desktop
+- `Include screen background when copying`: Copy transparent canvas images over the screen area behind AetherInk
 - `Quick save folder`: Choose where one-click PNG exports are written
 - `Click-through mode`: Pass mouse input through the overlay when supported and safe to enable
 
@@ -96,7 +98,8 @@ Overlay workflow
 
 - `Save PNG` exports the current canvas area only, without the top bar or cursor preview.
 - `Quick Save` writes a timestamped PNG to the selected quick save folder without opening a dialog.
-- `Copy Image` copies the same canvas-only image to the system clipboard.
+- `Copy` copies the current canvas image to the system clipboard.
+- When `Include screen background when copying` is enabled, `Copy` captures the screen area behind transparent canvases before copying.
 - `Save Background PNG` exports the transparent canvas area over the screen background behind AetherInk.
 - Hidden ink is omitted from PNG exports and clipboard image copies.
 - The PNG background follows the current canvas background setting, including transparent canvas opacity.

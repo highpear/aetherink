@@ -124,6 +124,14 @@ impl AetherInkApp {
                 ui.separator();
                 ui.label("Export");
 
+                ui.checkbox(
+                    &mut self.copy_includes_screen_background,
+                    "Include screen background when copying",
+                )
+                .on_hover_text(
+                    "Copy transparent canvas images over the screen area behind AetherInk.",
+                );
+
                 let quick_save_folder = self
                     .last_export_directory
                     .as_ref()
