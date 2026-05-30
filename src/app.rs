@@ -13,9 +13,8 @@ use rfd::FileDialog;
 use self::settings::{AppSettings, OverlaySettings};
 use self::ui::{
     clear_button, copy_image_button, drawing_mode_label, ink_visibility_label,
-    keyboard_shortcut_pressed, quick_save_button, redo_button, save_background_png_button,
-    save_png_button, show_pen_color_presets, show_pen_width_presets, top_bar_group_label,
-    undo_button,
+    keyboard_shortcut_pressed, redo_button, save_menu_button, show_pen_color_presets,
+    show_pen_width_presets, top_bar_group_label, undo_button,
 };
 use crate::canvas::{CanvasBackground, CanvasState};
 use crate::platform::{
@@ -373,8 +372,44 @@ impl AetherInkApp {
             self.start_clipboard_image_copy();
         }
 
+        let is_transparent_canvas = self.canvas.background() == CanvasBackground::Transparent;
+        let background_capture_availability = self.background_capture_availability;
+        let can_save_background_png = is_transparent_canvas
+            && background_capture_availability != BackgroundCaptureAvailability::Unsupported;
+        let can_open_save_menu = has_strokes || can_save_background_png;
+
+        ui.add_enabled_ui(can_open_save_menu, |ui| {
+            let (response, _) = egui::containers::menu::MenuButton::from_button(save_menu_button())
+                .ui(ui, |ui| {
+                    self.show_save_menu_contents(
+                        ui,
+                        has_strokes,
+                        is_transparent_canvas,
+                        background_capture_availability,
+                        can_save_background_png,
+                    );
+                });
+
+            response.on_hover_text(if can_open_save_menu {
+                "Save the canvas or choose another PNG export option"
+            } else {
+                "Draw something on the canvas before saving a PNG"
+            });
+        });
+
+        ui.separator();
+    }
+
+    fn show_save_menu_contents(
+        &mut self,
+        ui: &mut egui::Ui,
+        has_strokes: bool,
+        is_transparent_canvas: bool,
+        background_capture_availability: BackgroundCaptureAvailability,
+        can_save_background_png: bool,
+    ) {
         if ui
-            .add_enabled(has_strokes, save_png_button())
+            .add_enabled(has_strokes, egui::Button::new("Save PNG..."))
             .on_hover_text(if has_strokes {
                 "Choose where to save the current canvas as a PNG file (Ctrl/Cmd+S)"
             } else {
@@ -382,29 +417,14 @@ impl AetherInkApp {
             })
             .clicked()
         {
+            ui.close();
             self.start_png_export();
-        }
-
-        let is_transparent_canvas = self.canvas.background() == CanvasBackground::Transparent;
-        let background_capture_availability = self.background_capture_availability;
-        let can_save_background_png = is_transparent_canvas
-            && background_capture_availability != BackgroundCaptureAvailability::Unsupported;
-
-        if ui
-            .add_enabled(can_save_background_png, save_background_png_button())
-            .on_hover_text(background_png_button_hover_text(
-                is_transparent_canvas,
-                background_capture_availability,
-            ))
-            .clicked()
-        {
-            self.start_captured_background_png_export();
         }
 
         let can_quick_save = has_strokes && self.last_export_directory.is_some();
 
         if ui
-            .add_enabled(can_quick_save, quick_save_button())
+            .add_enabled(can_quick_save, egui::Button::new("Quick Save"))
             .on_hover_text(if self.last_export_directory.is_some() {
                 "Save the current canvas to the quick save folder (Ctrl/Cmd+Shift+S)"
             } else {
@@ -412,10 +432,24 @@ impl AetherInkApp {
             })
             .clicked()
         {
+            ui.close();
             self.start_quick_png_export();
         }
 
-        ui.separator();
+        if ui
+            .add_enabled(
+                can_save_background_png,
+                egui::Button::new("Save Background PNG"),
+            )
+            .on_hover_text(background_png_button_hover_text(
+                is_transparent_canvas,
+                background_capture_availability,
+            ))
+            .clicked()
+        {
+            ui.close();
+            self.start_captured_background_png_export();
+        }
     }
 
     fn show_overlay_group(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {

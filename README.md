@@ -63,10 +63,10 @@ Overlay workflow
 5. Toggle `Ink: On` / `Ink: Off` if you want to hide annotations without clearing them.
 6. Open `Settings` to switch between white and transparent canvas modes and adjust overlay behavior.
 7. Enable `Always on top` when you want to keep the canvas above other windows.
-8. Use `Save PNG` to choose where to export the current canvas as a PNG file.
-9. Use `Copy Image` to copy the current canvas image to the clipboard.
-10. Set a quick save folder in `Settings`, then use `Quick Save` to export without opening a save dialog.
-11. In transparent canvas mode, use `Save Background PNG` to export your ink over the screen area behind the canvas.
+8. Use `Save` > `Save PNG...` to choose where to export the current canvas as a PNG file.
+9. Use `Copy` to copy the current canvas image to the clipboard.
+10. Set a quick save folder in `Settings`, then use `Save` > `Quick Save` to export without opening a save dialog.
+11. In transparent canvas mode, use `Save` > `Save Background PNG` to export your ink over the screen area behind the canvas.
 12. On supported platforms, enable click-through mode when you want the overlay to stay visible without intercepting normal mouse input.
 
 ## Shortcuts

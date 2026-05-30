@@ -158,9 +158,9 @@ pub(crate) fn clear_button() -> egui::Button<'static> {
     .min_size(egui::vec2(68.0, 28.0))
 }
 
-pub(crate) fn save_png_button() -> egui::Button<'static> {
+pub(crate) fn save_menu_button() -> egui::Button<'static> {
     egui::Button::new(
-        egui::RichText::new("Save PNG")
+        egui::RichText::new("Save")
             .strong()
             .color(egui::Color32::from_rgb(32, 78, 54)),
     )
@@ -170,27 +170,12 @@ pub(crate) fn save_png_button() -> egui::Button<'static> {
         egui::Color32::from_rgb(86, 162, 118),
     ))
     .corner_radius(6.0)
-    .min_size(egui::vec2(86.0, 28.0))
-}
-
-pub(crate) fn save_background_png_button() -> egui::Button<'static> {
-    egui::Button::new(
-        egui::RichText::new("Save BG PNG")
-            .strong()
-            .color(egui::Color32::from_rgb(32, 78, 54)),
-    )
-    .fill(egui::Color32::from_rgb(231, 248, 237))
-    .stroke(egui::Stroke::new(
-        1.0,
-        egui::Color32::from_rgb(86, 162, 118),
-    ))
-    .corner_radius(6.0)
-    .min_size(egui::vec2(106.0, 28.0))
+    .min_size(egui::vec2(72.0, 28.0))
 }
 
 pub(crate) fn copy_image_button() -> egui::Button<'static> {
     egui::Button::new(
-        egui::RichText::new("Copy Image")
+        egui::RichText::new("Copy")
             .strong()
             .color(egui::Color32::from_rgb(32, 78, 54)),
     )
@@ -200,20 +185,5 @@ pub(crate) fn copy_image_button() -> egui::Button<'static> {
         egui::Color32::from_rgb(86, 162, 118),
     ))
     .corner_radius(6.0)
-    .min_size(egui::vec2(98.0, 28.0))
-}
-
-pub(crate) fn quick_save_button() -> egui::Button<'static> {
-    egui::Button::new(
-        egui::RichText::new("Quick Save")
-            .strong()
-            .color(egui::Color32::from_rgb(32, 78, 54)),
-    )
-    .fill(egui::Color32::from_rgb(231, 248, 237))
-    .stroke(egui::Stroke::new(
-        1.0,
-        egui::Color32::from_rgb(86, 162, 118),
-    ))
-    .corner_radius(6.0)
-    .min_size(egui::vec2(94.0, 28.0))
+    .min_size(egui::vec2(72.0, 28.0))
 }
