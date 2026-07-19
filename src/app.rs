@@ -223,7 +223,20 @@ impl AetherInkApp {
     }
 
     fn sync_overlay_state(&mut self, ctx: &egui::Context) {
-        if self.click_through_controller.poll_overlay_toggle_shortcut() {
+        // Poll every frame so the edge detector stays current, but only let the
+        // global (system-wide) shortcut toggle click-through while it is on -
+        // the only state where this window cannot receive key events. While
+        // click-through is off, require the focused-window shortcut so
+        // Ctrl+Shift+O pressed in another application cannot enable
+        // passthrough behind the user's back.
+        let global_toggle_pressed = self.click_through_controller.poll_overlay_toggle_shortcut();
+        let toggle_pressed = if self.overlay.click_through_mode {
+            global_toggle_pressed
+        } else {
+            keyboard_shortcut_pressed(ctx, egui::Key::O, true)
+        };
+
+        if toggle_pressed {
             self.set_click_through_mode(ctx, !self.overlay.click_through_mode);
         }
 
