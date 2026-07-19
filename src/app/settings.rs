@@ -31,6 +31,7 @@ pub(crate) struct AppSettings {
     pub(crate) canvas: CanvasSettings,
     pub(crate) overlay: OverlaySettings,
     pub(crate) last_export_directory: Option<PathBuf>,
+    pub(crate) quick_save_directory: Option<PathBuf>,
     pub(crate) copy_includes_screen_background: bool,
 }
 
@@ -54,6 +55,7 @@ mod tests {
         let settings = AppSettings::default();
 
         assert!(settings.last_export_directory.is_none());
+        assert!(settings.quick_save_directory.is_none());
     }
 
     #[test]

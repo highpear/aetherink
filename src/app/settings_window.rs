@@ -133,7 +133,7 @@ impl AetherInkApp {
                 );
 
                 let quick_save_folder = self
-                    .last_export_directory
+                    .quick_save_directory
                     .as_ref()
                     .map(|path| path.display().to_string())
                     .unwrap_or_else(|| String::from("Not set"));
@@ -144,20 +144,24 @@ impl AetherInkApp {
                     if ui.button("Choose folder").clicked() {
                         let mut folder_dialog = rfd::FileDialog::new();
 
-                        if let Some(directory) = &self.last_export_directory {
+                        if let Some(directory) = self
+                            .quick_save_directory
+                            .as_ref()
+                            .or(self.last_export_directory.as_ref())
+                        {
                             folder_dialog = folder_dialog.set_directory(directory);
                         }
 
                         if let Some(directory) = folder_dialog.pick_folder() {
-                            self.last_export_directory = Some(directory);
+                            self.quick_save_directory = Some(directory);
                         }
                     }
 
                     if ui
-                        .add_enabled(self.last_export_directory.is_some(), egui::Button::new("Clear"))
+                        .add_enabled(self.quick_save_directory.is_some(), egui::Button::new("Clear"))
                         .clicked()
                     {
-                        self.last_export_directory = None;
+                        self.quick_save_directory = None;
                     }
                 });
 

@@ -61,6 +61,7 @@ pub struct AetherInkApp {
     canvas: CanvasState,
     overlay: OverlaySettings,
     last_export_directory: Option<PathBuf>,
+    quick_save_directory: Option<PathBuf>,
     is_settings_window_open: bool,
     copy_includes_screen_background: bool,
     export_status: Option<ExportStatus>,
@@ -159,6 +160,7 @@ impl AetherInkApp {
         self.canvas.apply_settings(settings.canvas);
         self.overlay = settings.overlay;
         self.last_export_directory = settings.last_export_directory;
+        self.quick_save_directory = settings.quick_save_directory;
         self.copy_includes_screen_background = settings.copy_includes_screen_background;
     }
 
@@ -167,6 +169,7 @@ impl AetherInkApp {
             canvas: self.canvas.settings(),
             overlay: self.overlay.clone(),
             last_export_directory: self.last_export_directory.clone(),
+            quick_save_directory: self.quick_save_directory.clone(),
             copy_includes_screen_background: self.copy_includes_screen_background,
         }
     }
@@ -432,11 +435,11 @@ impl AetherInkApp {
             self.start_png_export();
         }
 
-        let can_quick_save = has_strokes && self.last_export_directory.is_some();
+        let can_quick_save = has_strokes && self.quick_save_directory.is_some();
 
         if ui
             .add_enabled(can_quick_save, egui::Button::new("Quick Save"))
-            .on_hover_text(if self.last_export_directory.is_some() {
+            .on_hover_text(if self.quick_save_directory.is_some() {
                 "Save the current canvas to the quick save folder (Ctrl/Cmd+Shift+S)"
             } else {
                 "Choose a quick save folder in Settings before using Quick Save"
@@ -701,7 +704,7 @@ impl AetherInkApp {
     fn quick_save_canvas_png(&mut self) -> Result<PathBuf, String> {
         self.canvas.stop_drawing();
 
-        let Some(directory) = &self.last_export_directory else {
+        let Some(directory) = &self.quick_save_directory else {
             return Err(String::from(
                 "Choose a quick save folder in Settings before using Quick Save.",
             ));
