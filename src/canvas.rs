@@ -8,7 +8,7 @@ mod pen;
 mod raster;
 
 use egui::{Color32, CursorIcon, Response, Sense, Stroke, Ui};
-use image::RgbaImage;
+use image::{Rgba, RgbaImage};
 use serde::{Deserialize, Serialize};
 
 use self::cursor::draw_cursor_indicator;
@@ -272,10 +272,23 @@ impl CanvasState {
 
     pub fn render_image(&self) -> Result<RgbaImage, String> {
         let (width, height) = self.canvas_image_size()?;
-        let background =
-            RgbaImage::from_pixel(width, height, rgba_from_color32(self.background_color()));
+        let background = RgbaImage::from_pixel(width, height, self.export_background_rgba());
 
         self.render_image_over_background(background)
+    }
+
+    // PNG and clipboard images use straight alpha, while `background_color`
+    // returns an egui `Color32` with premultiplied alpha; exporting that
+    // directly would turn a partially transparent white tint into gray.
+    fn export_background_rgba(&self) -> Rgba<u8> {
+        match self.settings.background {
+            CanvasBackground::White => rgba_from_color32(DEFAULT_WHITE_BACKGROUND),
+            CanvasBackground::Transparent => {
+                let alpha =
+                    (self.settings.transparent_background_opacity.clamp(0.0, 1.0) * 255.0) as u8;
+                Rgba([255, 255, 255, alpha])
+            }
+        }
     }
 
     pub fn render_image_over_background(&self, background: RgbaImage) -> Result<RgbaImage, String> {
@@ -867,7 +880,24 @@ mod tests {
         let _ = std::fs::remove_file(&path);
 
         assert_eq!(image.dimensions(), (2, 2));
-        assert_eq!(image.get_pixel(0, 0).0, [0, 0, 0, 0]);
+        assert_eq!(image.get_pixel(0, 0).0, [255, 255, 255, 0]);
+    }
+
+    #[test]
+    fn partially_transparent_background_exports_as_straight_alpha_white() {
+        let mut canvas = CanvasState {
+            last_canvas_rect: Some(egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(2.0, 2.0),
+            )),
+            ..Default::default()
+        };
+        *canvas.background_mut() = CanvasBackground::Transparent;
+        *canvas.transparent_background_opacity_mut() = 0.5;
+
+        let image = canvas.render_image().expect("image render should succeed");
+
+        assert_eq!(image.get_pixel(0, 0).0, [255, 255, 255, 127]);
     }
 
     #[test]
