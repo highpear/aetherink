@@ -385,18 +385,26 @@ impl CanvasState {
     }
 
     pub fn ui(&mut self, ui: &mut Ui, drawing_enabled: bool) -> Response {
-        self.ui_with_ink_visibility(ui, drawing_enabled, self.settings.ink_visible)
+        self.ui_with_canvas_hidden(ui, drawing_enabled, false)
     }
 
-    pub fn ui_without_ink(&mut self, ui: &mut Ui, drawing_enabled: bool) -> Response {
-        self.ui_with_ink_visibility(ui, drawing_enabled, false)
-    }
-
-    fn ui_with_ink_visibility(
+    // Background capture grabs the screen while this window is still visible
+    // (Windows captures the composited desktop, including this window), so
+    // every canvas visual - background tint, border, ink, cursor - must be
+    // suppressed for those frames to keep it out of the captured background.
+    pub fn ui_hidden_for_background_capture(
         &mut self,
         ui: &mut Ui,
         drawing_enabled: bool,
-        ink_visible: bool,
+    ) -> Response {
+        self.ui_with_canvas_hidden(ui, drawing_enabled, true)
+    }
+
+    fn ui_with_canvas_hidden(
+        &mut self,
+        ui: &mut Ui,
+        drawing_enabled: bool,
+        hide_canvas: bool,
     ) -> Response {
         let available_size = ui.available_size();
         let sense = if drawing_enabled {
@@ -409,10 +417,18 @@ impl CanvasState {
 
         let rect = response.rect;
         self.last_canvas_rect = Some(rect);
-        painter.rect_filled(rect, 0.0, self.background_color());
-        let should_show_transparent_border = self.should_show_transparent_border(&response, rect);
 
-        if should_show_transparent_border {
+        if drawing_enabled {
+            self.handle_pointer_input(&response);
+        }
+
+        if hide_canvas {
+            return response;
+        }
+
+        painter.rect_filled(rect, 0.0, self.background_color());
+
+        if self.should_show_transparent_border(&response, rect) {
             painter.rect_stroke(
                 rect,
                 0.0,
@@ -421,11 +437,7 @@ impl CanvasState {
             );
         }
 
-        if drawing_enabled {
-            self.handle_pointer_input(&response);
-        }
-
-        if ink_visible {
+        if self.settings.ink_visible {
             for stroke in &self.strokes {
                 draw_stroke(&painter, stroke);
             }

@@ -113,8 +113,9 @@ impl eframe::App for AetherInkApp {
                     ui.label("Drawing paused. Enable Draw to edit the canvas.");
                 }
 
-                if self.should_hide_ink_for_background_capture() {
-                    self.canvas.ui_without_ink(ui, self.overlay.drawing_enabled);
+                if self.should_hide_canvas_for_background_capture() {
+                    self.canvas
+                        .ui_hidden_for_background_capture(ui, self.overlay.drawing_enabled);
                 } else {
                     self.canvas.ui(ui, self.overlay.drawing_enabled);
                 }
@@ -609,7 +610,9 @@ impl AetherInkApp {
     }
 
     fn central_panel_fill_color(&self) -> egui::Color32 {
-        if self.overlay.transparent_window_background {
+        if self.overlay.transparent_window_background
+            || self.should_hide_canvas_for_background_capture()
+        {
             egui::Color32::TRANSPARENT
         } else {
             self.canvas.background_color()
@@ -774,7 +777,7 @@ impl AetherInkApp {
             .render_image_over_screen_background(background, ctx)
     }
 
-    fn should_hide_ink_for_background_capture(&self) -> bool {
+    fn should_hide_canvas_for_background_capture(&self) -> bool {
         self.pending_background_capture.is_some()
     }
     fn mark_pending_background_capture_ready(&mut self, ctx: &egui::Context) {
@@ -904,7 +907,8 @@ impl AetherInkApp {
         }
 
         self.begin_canvas_with_captured_background_clipboard_copy();
-        self.export_status = self.export_status.take();
+        // Drop any visible toast so it cannot appear in the captured screen area.
+        self.export_status = None;
     }
 
     fn start_captured_background_png_export(&mut self) {
@@ -917,7 +921,8 @@ impl AetherInkApp {
         }
 
         self.export_status = match self.begin_canvas_with_captured_background_png_export() {
-            Ok(true) => self.export_status.take(),
+            // Drop any visible toast so it cannot appear in the captured screen area.
+            Ok(true) => None,
             Ok(false) => self.export_status.take(),
             Err(error) => Some(ExportStatus {
                 kind: ExportStatusKind::Error,
