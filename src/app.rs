@@ -206,6 +206,13 @@ impl AetherInkApp {
         self.overlay.click_through_mode = enabled && self.can_enable_click_through_mode();
         self.temporary_drawing_active = false;
         self.apply_pointer_passthrough(ctx);
+
+        // Reclaim keyboard focus only when leaving click-through mode (the user
+        // deliberately returning to the app). Temporary drawing does not go
+        // through this path, so it never steals focus.
+        if !self.overlay.click_through_mode {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        }
     }
 
     fn can_enable_click_through_mode(&self) -> bool {
@@ -602,14 +609,15 @@ impl AetherInkApp {
         }
     }
 
+    // Only updates mouse passthrough. Keyboard focus is intentionally left
+    // untouched here: temporary drawing (Shift held while click-through is on)
+    // must not steal focus from the application behind the overlay. Focus is
+    // taken only when the user deliberately leaves click-through mode, in
+    // set_click_through_mode.
     fn apply_pointer_passthrough(&self, ctx: &egui::Context) {
         ctx.send_viewport_cmd(egui::ViewportCommand::MousePassthrough(
             self.effective_click_through_mode(),
         ));
-
-        if !self.effective_click_through_mode() {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
-        }
     }
 
     fn effective_click_through_mode(&self) -> bool {
