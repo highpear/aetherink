@@ -10,17 +10,12 @@ pub use windows::{BackgroundCaptureController, ClickThroughController};
 #[cfg(target_os = "macos")]
 pub use macos::{BackgroundCaptureController, ClickThroughController};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BackgroundCaptureAvailability {
     Available,
     PermissionRequired,
+    #[default]
     Unsupported,
-}
-
-impl Default for BackgroundCaptureAvailability {
-    fn default() -> Self {
-        Self::Unsupported
-    }
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]

@@ -138,8 +138,10 @@ impl eframe::App for AetherInkApp {
 
 impl AetherInkApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let mut app = Self::default();
-        app.background_capture_controller = BackgroundCaptureController::new(cc);
+        let mut app = Self {
+            background_capture_controller: BackgroundCaptureController::new(cc),
+            ..Self::default()
+        };
         app.refresh_background_capture_availability();
 
         if let Some(storage) = cc.storage
