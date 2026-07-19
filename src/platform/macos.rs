@@ -53,6 +53,8 @@ unsafe extern "C" {
     fn CGEventSourceKeyState(state_id: i32, key: u16) -> bool;
     fn CGPreflightScreenCaptureAccess() -> bool;
     fn CGRequestScreenCaptureAccess() -> bool;
+    // Deprecated since macOS 14, but still functional as of this writing.
+    // Background capture will eventually need to migrate to ScreenCaptureKit.
     fn CGWindowListCreateImage(
         screen_bounds: CGRect,
         list_option: u32,
