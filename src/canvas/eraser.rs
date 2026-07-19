@@ -30,6 +30,7 @@ pub(super) fn erase_from_stroke(
     let mut remaining_strokes = Vec::new();
     let effective_radius = eraser_radius + stroke.width * 0.5;
     let mut current_points = Vec::new();
+    let mut any_point_erased = false;
 
     for segment in stroke.points.windows(2) {
         let sampled_points = sample_segment_points(segment[0], segment[1], ERASER_SAMPLING_STEP);
@@ -38,6 +39,7 @@ pub(super) fn erase_from_stroke(
             let is_erased = point_is_inside_eraser_path(point, eraser_path, effective_radius);
 
             if is_erased {
+                any_point_erased = true;
                 finalize_stroke_fragment(
                     &mut remaining_strokes,
                     &mut current_points,
@@ -48,6 +50,13 @@ pub(super) fn erase_from_stroke(
                 push_point_if_needed(&mut current_points, point);
             }
         }
+    }
+
+    // An untouched stroke must keep its original points; the sampled fragments
+    // rebuilt above use resampled geometry, which would silently rewrite the
+    // stroke and pollute the undo history on eraser drags that hit nothing.
+    if !any_point_erased {
+        return vec![stroke.clone()];
     }
 
     finalize_stroke_fragment(
@@ -207,17 +216,13 @@ mod tests {
     }
 
     #[test]
-    fn eraser_keeps_stroke_when_path_misses() {
+    fn eraser_keeps_stroke_unchanged_when_path_misses() {
         let source = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
         let eraser_path = [egui::pos2(5.0, 10.0)];
 
         let remaining = erase_from_stroke(&source, &eraser_path, 1.0);
 
-        assert_eq!(remaining.len(), 1);
-        assert_eq!(remaining[0].color, source.color);
-        assert_eq!(remaining[0].width, source.width);
-        assert_eq!(remaining[0].points.first(), source.points.first());
-        assert_eq!(remaining[0].points.last(), source.points.last());
+        assert_eq!(remaining, vec![source]);
     }
 
     #[test]

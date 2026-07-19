@@ -637,6 +637,23 @@ mod tests {
     }
 
     #[test]
+    fn eraser_miss_keeps_strokes_and_undo_history_untouched() {
+        let original_stroke = stroke(&[(0.0, 0.0), (10.0, 0.0)]);
+        let mut canvas = CanvasState {
+            strokes: vec![original_stroke.clone()],
+            current_tool: Tool::Eraser,
+            current_eraser_path: vec![egui::pos2(50.0, 50.0), egui::pos2(60.0, 50.0)],
+            ..Default::default()
+        };
+
+        canvas.stop_drawing();
+
+        assert_eq!(canvas.strokes, vec![original_stroke]);
+        assert!(!canvas.can_undo());
+        assert!(canvas.current_eraser_path.is_empty());
+    }
+
+    #[test]
     fn transparent_background_opacity_controls_alpha() {
         let mut canvas = CanvasState::default();
         *canvas.background_mut() = CanvasBackground::Transparent;
