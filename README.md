@@ -112,6 +112,7 @@ Overlay workflow
 - Enable `Always on top` before using AetherInk as a screen annotation overlay.
 - Use `Transparent window background` with a transparent canvas when you want the overlay to visually blend into the desktop.
 - Enable `Click-through mode` only after the overlay is positioned and drawing is ready.
+- Enabling `Click-through mode` also turns on `Always on top`, so the overlay stays above the window you are annotating.
 - While click-through mode is active, pointer input passes through AetherInk to the window behind it.
 - Hold `Shift` to draw temporarily while click-through mode remains enabled.
 - Press `Ctrl+Shift+O` to turn click-through mode off from the keyboard.

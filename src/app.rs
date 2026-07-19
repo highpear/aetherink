@@ -205,6 +205,15 @@ impl AetherInkApp {
     fn set_click_through_mode(&mut self, ctx: &egui::Context, enabled: bool) {
         self.overlay.click_through_mode = enabled && self.can_enable_click_through_mode();
         self.temporary_drawing_active = false;
+
+        // Click-through requires always-on-top: a click that passes through
+        // raises the target window, which would bury a non-topmost overlay and
+        // send every later temporary-drawing drag to that window instead.
+        if self.overlay.click_through_mode && !self.overlay.always_on_top {
+            self.overlay.always_on_top = true;
+            self.apply_always_on_top(ctx);
+        }
+
         self.apply_pointer_passthrough(ctx);
 
         // Reclaim keyboard focus only when leaving click-through mode (the user
@@ -1101,6 +1110,25 @@ fn debug_background_capture_path(export_path: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[test]
+    fn enabling_click_through_forces_always_on_top() {
+        let ctx = egui::Context::default();
+        let mut app = AetherInkApp::default();
+        assert!(!app.overlay.always_on_top);
+
+        app.set_click_through_mode(&ctx, true);
+
+        assert!(app.overlay.click_through_mode);
+        assert!(app.overlay.always_on_top);
+
+        // Turning click-through off keeps always-on-top as the user's setting.
+        app.set_click_through_mode(&ctx, false);
+
+        assert!(!app.overlay.click_through_mode);
+        assert!(app.overlay.always_on_top);
+    }
 
     #[test]
     fn ensure_png_extension_adds_missing_extension() {
