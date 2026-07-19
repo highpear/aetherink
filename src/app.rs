@@ -655,7 +655,7 @@ impl AetherInkApp {
             let remaining = status
                 .visible_until
                 .saturating_duration_since(Instant::now());
-            ctx.request_repaint_after(remaining.min(CLICK_THROUGH_POLL_INTERVAL));
+            ctx.request_repaint_after(remaining);
         }
     }
 
