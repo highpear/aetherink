@@ -24,6 +24,9 @@ use crate::stroke::{DrawStroke, Tool};
 const DEFAULT_WHITE_BACKGROUND: Color32 = Color32::from_rgb(248, 246, 240);
 const TRANSPARENT_CANVAS_BORDER: Color32 = Color32::from_gray(180);
 const DEFAULT_ERASER_RADIUS: f32 = 8.0;
+// Caps undo history memory growth during long sessions; oldest snapshots are
+// dropped once this limit is exceeded.
+const MAX_HISTORY_SNAPSHOTS: usize = 100;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CanvasBackground {
@@ -256,7 +259,7 @@ impl CanvasState {
         self.stop_drawing();
 
         if let Some(next_strokes) = self.redo_history.pop() {
-            self.history.push(self.strokes.clone());
+            self.push_history(self.strokes.clone());
             self.strokes = next_strokes;
         }
     }
@@ -538,8 +541,18 @@ impl CanvasState {
     }
 
     fn push_history_snapshot(&mut self) {
-        self.history.push(self.strokes.clone());
+        self.push_history(self.strokes.clone());
         self.redo_history.clear();
+    }
+
+    // Pushes a snapshot onto `history`, trimming the oldest entry once the
+    // cap is exceeded so long sessions don't grow undo memory unbounded.
+    fn push_history(&mut self, snapshot: Vec<DrawStroke>) {
+        self.history.push(snapshot);
+
+        if self.history.len() > MAX_HISTORY_SNAPSHOTS {
+            self.history.remove(0);
+        }
     }
 }
 
@@ -658,6 +671,26 @@ mod tests {
 
         assert!(!canvas.can_redo());
         assert_eq!(canvas.strokes.len(), 2);
+    }
+
+    #[test]
+    fn history_is_capped_at_max_snapshots() {
+        let mut canvas = CanvasState::default();
+
+        for i in 0..(MAX_HISTORY_SNAPSHOTS + 10) {
+            let x = i as f32;
+            canvas.current_stroke = Some(stroke(&[(x, 0.0), (x + 1.0, 0.0)]));
+            canvas.stop_drawing();
+        }
+
+        assert_eq!(canvas.history.len(), MAX_HISTORY_SNAPSHOTS);
+        assert_eq!(canvas.strokes.len(), MAX_HISTORY_SNAPSHOTS + 10);
+
+        let strokes_before_undo = canvas.strokes.clone();
+        canvas.undo();
+
+        assert_eq!(canvas.strokes.len(), strokes_before_undo.len() - 1);
+        assert_eq!(canvas.strokes, &strokes_before_undo[..strokes_before_undo.len() - 1]);
     }
 
     #[test]
