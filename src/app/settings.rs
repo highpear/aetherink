@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::canvas::CanvasSettings;
 
+// See CanvasSettings: the struct-level serde default keeps stored settings
+// loadable when new fields are added.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub(crate) struct OverlaySettings {
     pub(crate) drawing_enabled: bool,
     pub(crate) always_on_top: bool,

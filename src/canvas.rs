@@ -55,12 +55,15 @@ impl TransparentCanvasBorderVisibility {
     }
 }
 
+// The struct-level serde default keeps previously persisted settings loadable
+// when new fields are added; without it one new field would silently reset
+// every stored setting.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct CanvasSettings {
     pub background: CanvasBackground,
     pub transparent_background_opacity: f32,
     pub transparent_canvas_border_visibility: TransparentCanvasBorderVisibility,
-    #[serde(default = "default_ink_visible")]
     pub ink_visible: bool,
     pub default_pen_color: [u8; 4],
     pub default_pen_width: f32,
@@ -79,10 +82,6 @@ impl Default for CanvasSettings {
             eraser_radius: DEFAULT_ERASER_RADIUS,
         }
     }
-}
-
-fn default_ink_visible() -> bool {
-    true
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
