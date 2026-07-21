@@ -23,7 +23,10 @@ Drawing currently available:
 - [x] Save drawing as PNG
 - [x] Quick save drawing as PNG
 - [x] Copy drawing image to clipboard
+- [x] Copy transparent canvas images over the captured screen background
 - [x] Keyboard shortcuts for undo and clear
+- [x] Conservative pen point filtering
+- [x] Undo history capped at 100 snapshots
 
 Canvas and window controls currently available:
 
@@ -36,6 +39,7 @@ Canvas and window controls currently available:
 - [x] Transparent window background toggle
 - [x] Settings window
 - [x] Persistent canvas and overlay settings
+- [x] Persistent quick save and export preferences
 
 Overlay workflow currently available:
 
@@ -45,15 +49,19 @@ Overlay workflow currently available:
 - [x] Shared click-through controller structure for Windows and macOS
 - [x] macOS shortcut monitoring implementation for overlay toggle and temporary drawing
 - [x] Click-through remains disabled when reliable shortcut monitoring is unavailable
+- [x] Always-on-top is enabled automatically with click-through mode
+- [x] Click-through starts disabled after launch for safe recovery
 
 ---
 
 ## Next Priorities
 
-These are the most useful next steps based on the current codebase and project priorities.
+The overlay and export foundations are implemented. The next practical work is:
 
-- [x] Validate macOS click-through workflow end-to-end
-- [x] Verify macOS transparent window behavior in real usage
+1. Add focused validation for overlay regressions.
+2. Investigate canvas-only click-through while keeping overlay controls interactive.
+3. Add a quick global shortcut to show or hide the overlay.
+4. Define screenshot annotation mode around the existing background capture workflow.
 
 ---
 
@@ -63,8 +71,8 @@ These do not all require immediate implementation, but clarifying them early sho
 
 - [x] Define undo history behavior for stroke, clear, and erase actions
 - [ ] Define undo history scope for future canvas actions
-- [ ] Decide how stroke smoothing should balance responsiveness and fidelity
-- [ ] Decide how overlay UI should appear in transparent mode
+- [x] Establish conservative pen point filtering that preserves turns and limits redundant points
+- [x] Keep the top bar readable and show overlay state in a floating status banner
 - [x] Define the interaction model while click-through mode is active
 - [ ] Investigate canvas-only click-through while keeping overlay controls interactive
 - [ ] Decide how much platform-specific behavior should be normalized across Windows and macOS
@@ -111,13 +119,13 @@ Run these checks in order when validating the current overlay workflow on macOS.
 - [x] Click-through mode actually passes pointer input through to the app behind the overlay
 - [x] `Shift` temporarily restores drawing while click-through mode is active
 - [x] Releasing `Shift` reliably returns the app to click-through mode
-- [x] `Ctrl+Shift+O` toggles overlay click-through mode on and off without getting stuck
+- [x] `Ctrl+Shift+O` enables click-through while focused and disables it globally without getting stuck
 - [x] Overlay status text matches the actual current interaction mode
 - [x] Focus returns correctly after leaving click-through mode
 
 ### 5. Restart / Persistence
 
-- [x] Persisted overlay settings restore correctly after restarting the app on macOS
+- [x] Persisted overlay settings restore correctly after restarting the app on macOS, with click-through safely disabled
 
 ---
 
@@ -127,12 +135,12 @@ Useful after the core drawing workflow feels stable.
 
 - [x] Reorganize the top bar so drawing, export, and overlay controls stay easy to scan
 - [x] Toggle ink visibility without clearing strokes
-- [ ] Screenshot annotation mode
+- [ ] Screenshot annotation mode beyond the existing background PNG export
 - [x] Define transparent canvas background PNG capture behavior
 - [x] Investigate canvas rect to screen coordinate mapping while excluding the top bar
 - [x] Add a tested helper for mapping the canvas rect to screen pixels
 - [x] Add a shared image composition path for drawing ink over a captured background
-- [x] Add the app and platform call path for future background capture
+- [x] Add the shared app and platform call path for background capture
 - [x] Add an initial Windows screen-region capture backend
 - [x] Add an initial macOS screen-region capture backend
 - [x] Prototype background PNG export for the transparent canvas area
@@ -158,7 +166,7 @@ Keep changes incremental and measurable.
 
 - [ ] App icon
 - [x] Windows build validation
-- [ ] macOS build validation
+- [x] macOS release build validation
 - [x] README usage notes for overlay features
 - [ ] First packaged release
 

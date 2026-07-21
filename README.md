@@ -11,7 +11,7 @@ A lightweight desktop overlay drawing app for Windows and macOS.
 
 ## Current Status
 
-AetherInk is currently an early MVP focused on stable freehand drawing and the first usable overlay workflow.
+AetherInk is currently an early MVP with stable freehand drawing, a usable cross-platform overlay workflow, and PNG/clipboard export.
 
 ## Current Features
 
@@ -24,8 +24,10 @@ Drawing
 - Adjustable pen width
 - Adjustable eraser size
 - Basic color palette
+- Conservative point filtering for responsive freehand strokes
 - Undo last stroke
 - Redo last undone change
+- Undo history capped at 100 snapshots
 - Clear canvas button
 - Toggle ink visibility without clearing strokes
 - Save the current canvas as a PNG file
@@ -46,6 +48,7 @@ Canvas and window
 - Transparent window background toggle
 - Settings window
 - Persistent canvas and overlay settings
+- Persistent export preferences, including the quick save folder
 
 Overlay workflow
 
@@ -78,7 +81,7 @@ Overlay workflow
 - `Ctrl+Shift+Z` or `Ctrl+Y`: Redo the last undone change
 - `Ctrl+Shift+C`: Clear the canvas
 - `Ctrl+Delete`: Clear the canvas
-- `Ctrl+Shift+O`: Toggle overlay click-through mode while shortcut monitoring is available
+- `Ctrl+Shift+O`: Enable click-through while AetherInk is focused, or disable it globally while click-through is active
 - `Shift` hold: Temporarily draw while click-through mode is active
 
 ## Settings Overview
@@ -113,6 +116,7 @@ Overlay workflow
 - Use `Transparent window background` with a transparent canvas when you want the overlay to visually blend into the desktop.
 - Enable `Click-through mode` only after the overlay is positioned and drawing is ready.
 - Enabling `Click-through mode` also turns on `Always on top`, so the overlay stays above the window you are annotating.
+- Click-through mode starts disabled after every launch, even when other overlay settings are restored.
 - While click-through mode is active, pointer input passes through AetherInk to the window behind it.
 - Hold `Shift` to draw temporarily while click-through mode remains enabled.
 - Press `Ctrl+Shift+O` to turn click-through mode off from the keyboard.
@@ -129,9 +133,10 @@ Overlay workflow
 
 ## Near-Term Focus
 
-- Investigate Windows transparent window edge and shadow behavior in real usage
-- Review stroke rendering cost as stroke count grows
-- Extend validation around overlay regressions as platform behavior tightens
+- Add focused regression validation for the overlay workflow
+- Investigate canvas-only click-through while keeping overlay controls interactive
+- Add a global shortcut to show or hide the overlay
+- Define the next screenshot annotation workflow without duplicating the existing background PNG export
 
 ## Tech Stack
 

@@ -30,15 +30,18 @@ Run these checks on each supported release platform when practical.
 - Save a PNG with `Save PNG`.
 - Save a PNG with `Quick Save`.
 - Copy the canvas image to the clipboard.
+- Enable background-aware copying, then copy a transparent canvas image with the screen background included.
+- Save a transparent canvas with `Save Background PNG`.
 - Switch between white and transparent canvas backgrounds.
 - Adjust transparent canvas opacity.
 - Toggle always-on-top mode.
 - Toggle borderless window mode.
 - Toggle transparent window background mode.
 - Enable click-through mode.
+- Confirm enabling click-through also enables always-on-top mode.
 - Recover from click-through mode with the keyboard shortcut.
 - Hold `Shift` to draw temporarily while click-through mode is active.
-- Restart the app and confirm persisted settings restore correctly.
+- Restart the app and confirm persisted settings restore correctly while click-through starts disabled.
 
 ## Platform Checks
 
@@ -48,6 +51,7 @@ Windows:
 - Confirm click-through mode passes pointer input to the window behind AetherInk.
 - Confirm transparent window and canvas behavior remains visually usable.
 - Confirm background PNG export captures the expected screen area.
+- Confirm background-aware clipboard copy captures the expected screen area.
 
 macOS:
 
@@ -55,6 +59,7 @@ macOS:
 - Confirm click-through mode passes pointer input to the window behind AetherInk.
 - Confirm `Shift` temporary drawing works while click-through mode is active.
 - Confirm Screen Recording permission handling for background PNG export.
+- Confirm background-aware clipboard copy uses the same permitted capture workflow.
 - Confirm transparent window and canvas behavior remains visually usable.
 
 ## Packaging

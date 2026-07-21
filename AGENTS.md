@@ -7,16 +7,20 @@ AetherInk is a lightweight desktop overlay drawing app for Windows and macOS.
 Primary goals:
 
 - fast and simple freehand drawing
-- future transparent overlay mode
-- future click-through mode
+- transparent overlay drawing
+- click-through mode with reliable keyboard recovery
 - usability for screen sharing, presentations, and brainstorming
 
 Current stage:
 
 - early MVP
-- black line drawing with mouse drag
-- clear canvas button
-- project structure under active development
+- stable pen and eraser workflow with undo and redo
+- configurable color, pen width, and eraser size
+- transparent, always-on-top, borderless overlay workflow
+- Windows and macOS click-through with keyboard recovery and temporary drawing
+- PNG export, quick save, clipboard copy, and screen-background composition
+- persistent canvas, overlay, and export settings
+- release preparation and overlay regression validation remain in progress
 
 ---
 
@@ -57,16 +61,16 @@ Prefer small, understandable modules over complex architectures.
 
 For this project, prioritize features in this order:
 
-1. Stable drawing behavior
-2. Clean internal structure
-3. Transparent canvas support
-4. Always-on-top behavior
-5. Click-through overlay mode
-6. Global hotkeys
-7. Export / persistence
+1. Stable drawing and overlay behavior
+2. Focused overlay regression validation
+3. Canvas-only click-through with interactive controls
+4. Global overlay visibility shortcut
+5. Screenshot annotation workflow
+6. Stroke data export
+7. Release packaging and platform validation
 8. UI polish
 
-Do not jump ahead to advanced platform integration if the basic drawing workflow is unstable.
+Keep platform work focused on tightening the existing overlay workflow before adding broader annotation features.
 
 ---
 
@@ -246,8 +250,8 @@ Do not generate long speculative plans for simple changes.
 - overengineering
 - unnecessary traits/interfaces
 - introducing async without a real need
-- adding persistence too early
-- adding advanced export before overlay fundamentals work
+- expanding persistence beyond current settings without a clear need
+- expanding export while overlay regressions remain untested
 - mixing platform-native hacks into core drawing code
 - making broad unrelated changes in one pass
 
@@ -257,14 +261,12 @@ Do not generate long speculative plans for simple changes.
 
 The near-term roadmap is:
 
-1. solid MVP drawing
-2. undo
-3. pen width
-4. transparent canvas
-5. always-on-top
-6. click-through
-7. global hotkeys
-8. export / save
+1. overlay regression validation
+2. canvas-only click-through with interactive controls
+3. global overlay visibility shortcut
+4. screenshot annotation workflow
+5. stroke data export
+6. app icon and packaged release validation
 
 Use this order unless explicitly instructed otherwise.
 
