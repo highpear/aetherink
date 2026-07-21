@@ -690,7 +690,10 @@ mod tests {
         canvas.undo();
 
         assert_eq!(canvas.strokes.len(), strokes_before_undo.len() - 1);
-        assert_eq!(canvas.strokes, &strokes_before_undo[..strokes_before_undo.len() - 1]);
+        assert_eq!(
+            canvas.strokes,
+            &strokes_before_undo[..strokes_before_undo.len() - 1]
+        );
     }
 
     #[test]

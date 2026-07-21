@@ -781,7 +781,7 @@ impl AetherInkApp {
     fn render_canvas_with_captured_background(
         &mut self,
         ctx: &egui::Context,
-        debug_export_path: Option<&Path>,
+        _debug_export_path: Option<&Path>,
     ) -> Result<image::RgbaImage, String> {
         self.canvas.stop_drawing();
 
@@ -801,7 +801,7 @@ impl AetherInkApp {
             .capture_background(capture_rect)?;
 
         #[cfg(debug_assertions)]
-        if let Some(debug_export_path) = debug_export_path {
+        if let Some(debug_export_path) = _debug_export_path {
             save_debug_background_capture(&background, debug_export_path)?;
         }
 

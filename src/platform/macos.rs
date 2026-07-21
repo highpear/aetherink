@@ -1,5 +1,5 @@
 use std::ffi::{CString, c_char, c_void};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use image::RgbaImage;
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
@@ -311,7 +311,7 @@ fn create_image_below_window(
     }
 }
 
-fn write_cg_image_to_png(image: CGImageRef, path: &PathBuf) -> Result<(), String> {
+fn write_cg_image_to_png(image: CGImageRef, path: &Path) -> Result<(), String> {
     let path_string = cf_string_from_str(&path.display().to_string())?;
     let image_type = cf_string_from_str("public.png")?;
     let url = unsafe {
