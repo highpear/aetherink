@@ -2,6 +2,7 @@
 name = "aetherink"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
 
 [dependencies]
 arboard = "3.6"
