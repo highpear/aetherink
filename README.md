@@ -168,4 +168,6 @@ Release preparation is tracked separately in [RELEASE.md](RELEASE.md).
 ## License
 
 AetherInk's original source code is licensed under the [MIT License](LICENSE).
-Third-party components remain subject to their respective licenses.
+Third-party components remain subject to their respective licenses. The
+complete distribution notices are listed in
+[THIRD_PARTY_LICENSES.html](THIRD_PARTY_LICENSES.html).

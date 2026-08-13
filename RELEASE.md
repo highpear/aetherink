@@ -14,6 +14,9 @@ Keep the process small and repeatable. Do not add release-only feature work here
 - Confirm the working tree only contains intended release changes.
 - Review `README.md` for user-facing accuracy.
 - Review `TODO.md` for any release-blocking items.
+- Install `cargo-about` with `cargo install --locked cargo-about --features cli` if needed.
+- Regenerate third-party notices with `cargo about generate --locked --fail -o THIRD_PARTY_LICENSES.html about.hbs`.
+- Confirm the regenerated `THIRD_PARTY_LICENSES.html` has no unexpected changes.
 
 ## Manual Validation
 
@@ -68,6 +71,8 @@ macOS:
 - Package the app in the simplest suitable format for the release.
 - Launch the app from the packaged output, not only from `cargo run`.
 - Confirm packaged artifacts use the intended version.
+- Include `LICENSE` and `THIRD_PARTY_LICENSES.html` in every packaged artifact.
+- Confirm both license files are readable from the packaged output.
 - Keep platform-specific packaging notes in this document as the process becomes clearer.
 
 ## GitHub Release
