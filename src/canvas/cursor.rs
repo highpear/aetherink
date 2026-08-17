@@ -44,13 +44,13 @@ fn draw_eraser_preview(
 
     if path.is_empty() {
         if let Some(pointer_pos) = hover_pos {
-            painter.circle_stroke(pointer_pos, radius, Stroke::new(1.0, preview_color));
+            painter.circle_stroke(pointer_pos, radius, Stroke::new(1.0_f32, preview_color));
         }
         return;
     }
 
     for point in path {
-        painter.circle_stroke(*point, radius, Stroke::new(1.0, preview_color));
+        painter.circle_stroke(*point, radius, Stroke::new(1.0_f32, preview_color));
     }
 
     for points in path.windows(2) {
@@ -65,15 +65,15 @@ fn draw_eraser_preview(
             painter,
             *last_point,
             radius * 0.45,
-            Stroke::new(1.0, preview_color),
+            Stroke::new(1.0_f32, preview_color),
         );
     }
 }
 
 fn draw_pen_cursor(painter: &egui::Painter, pointer_pos: egui::Pos2, pen_width: f32) {
     let radius = (pen_width * 0.5).max(PEN_CURSOR_MIN_RADIUS);
-    let outer_stroke = Stroke::new(1.5, Color32::WHITE);
-    let inner_stroke = Stroke::new(1.0, Color32::from_rgba_unmultiplied(24, 24, 24, 220));
+    let outer_stroke = Stroke::new(1.5_f32, Color32::WHITE);
+    let inner_stroke = Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(24, 24, 24, 220));
 
     painter.circle_stroke(pointer_pos, radius + 1.0, outer_stroke);
     painter.circle_stroke(pointer_pos, radius, inner_stroke);
@@ -85,12 +85,12 @@ fn draw_pen_cursor(painter: &egui::Painter, pointer_pos: egui::Pos2, pen_width: 
 }
 
 fn draw_disabled_cursor(painter: &egui::Painter, pointer_pos: egui::Pos2) {
-    let stroke = Stroke::new(1.5, Color32::from_rgba_unmultiplied(120, 120, 120, 220));
+    let stroke = Stroke::new(1.5_f32, Color32::from_rgba_unmultiplied(120, 120, 120, 220));
     draw_crosshair(painter, pointer_pos, DISABLED_CURSOR_SIZE, stroke);
     painter.circle_stroke(
         pointer_pos,
         DISABLED_CURSOR_SIZE + 2.0,
-        Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 200)),
+        Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(255, 255, 255, 200)),
     );
 }
 

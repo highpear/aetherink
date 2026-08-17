@@ -64,12 +64,12 @@ pub(crate) fn show_pen_color_presets(ui: &mut egui::Ui, current_color: &mut egui
             painter.rect_stroke(
                 rect,
                 9.0,
-                egui::Stroke::new(1.0, stroke_color),
+                egui::Stroke::new(1.0_f32, stroke_color),
                 egui::StrokeKind::Outside,
             );
 
             if is_selected {
-                let check_stroke = egui::Stroke::new(2.0, check_color);
+                let check_stroke = egui::Stroke::new(2.0_f32, check_color);
                 let first = egui::pos2(rect.left() + 4.5, rect.center().y);
                 let middle = egui::pos2(rect.left() + 7.5, rect.bottom() - 5.0);
                 let last = egui::pos2(rect.right() - 4.0, rect.top() + 5.0);
@@ -124,7 +124,7 @@ pub(crate) fn undo_button() -> egui::Button<'static> {
     )
     .fill(egui::Color32::from_rgb(227, 236, 248))
     .stroke(egui::Stroke::new(
-        1.0,
+        1.0_f32,
         egui::Color32::from_rgb(127, 146, 179),
     ))
     .corner_radius(6.0)
@@ -139,7 +139,7 @@ pub(crate) fn redo_button() -> egui::Button<'static> {
     )
     .fill(egui::Color32::from_rgb(227, 236, 248))
     .stroke(egui::Stroke::new(
-        1.0,
+        1.0_f32,
         egui::Color32::from_rgb(127, 146, 179),
     ))
     .corner_radius(6.0)
@@ -153,7 +153,10 @@ pub(crate) fn clear_button() -> egui::Button<'static> {
             .color(egui::Color32::from_rgb(122, 32, 32)),
     )
     .fill(egui::Color32::from_rgb(252, 231, 231))
-    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(220, 38, 38)))
+    .stroke(egui::Stroke::new(
+        1.0_f32,
+        egui::Color32::from_rgb(220, 38, 38),
+    ))
     .corner_radius(6.0)
     .min_size(egui::vec2(68.0, 28.0))
 }
@@ -166,7 +169,7 @@ pub(crate) fn save_menu_button() -> egui::Button<'static> {
     )
     .fill(egui::Color32::from_rgb(231, 248, 237))
     .stroke(egui::Stroke::new(
-        1.0,
+        1.0_f32,
         egui::Color32::from_rgb(86, 162, 118),
     ))
     .corner_radius(6.0)
@@ -181,7 +184,7 @@ pub(crate) fn copy_image_button() -> egui::Button<'static> {
     )
     .fill(egui::Color32::from_rgb(231, 248, 237))
     .stroke(egui::Stroke::new(
-        1.0,
+        1.0_f32,
         egui::Color32::from_rgb(86, 162, 118),
     ))
     .corner_radius(6.0)

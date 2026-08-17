@@ -563,7 +563,7 @@ impl AetherInkApp {
                 ui.set_max_width(640.0);
                 egui::Frame::new()
                     .fill(fill_color)
-                    .stroke(egui::Stroke::new(1.0, stroke_color))
+                    .stroke(egui::Stroke::new(1.0_f32, stroke_color))
                     .corner_radius(8.0)
                     .inner_margin(egui::Margin::symmetric(12, 8))
                     .show(ui, |ui| {
@@ -603,7 +603,7 @@ impl AetherInkApp {
             .show(ctx, |ui| {
                 egui::Frame::new()
                     .fill(fill_color)
-                    .stroke(egui::Stroke::new(1.0, stroke_color))
+                    .stroke(egui::Stroke::new(1.0_f32, stroke_color))
                     .corner_radius(10.0)
                     .inner_margin(egui::Margin::symmetric(12, 10))
                     .show(ui, |ui| {

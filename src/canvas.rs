@@ -434,7 +434,7 @@ impl CanvasState {
             painter.rect_stroke(
                 rect,
                 0.0,
-                Stroke::new(1.0, TRANSPARENT_CANVAS_BORDER),
+                Stroke::new(1.0_f32, TRANSPARENT_CANVAS_BORDER),
                 egui::StrokeKind::Inside,
             );
         }
